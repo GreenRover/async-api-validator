@@ -1,0 +1,26 @@
+{
+  "entryFile": "./src/index.ts",
+  "controllerPathGlobs": [
+    "./src/controllers/**/*controller.ts"
+  ],
+  "routes": {
+    "basePath": "/api/v1",
+    "routesDir": "./src/routes",
+    "middleware": "express"
+  },
+  "spec": {
+    "basePath": "/api/v1",
+    "specVersion": 3,
+    "outputDirectory": "./src/generated/",
+    "tags": [
+      {
+        "name": "asyncapi",
+        "description": "Operations about users",
+        "externalDocs": {
+          "description": "Find out what async apis",
+          "url": "https://www.asyncapi.com/"
+        }
+      }
+    ]
+  }
+}
