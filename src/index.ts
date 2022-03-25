@@ -17,7 +17,7 @@ app.use(
       swaggerUi.generateHTML(
         await import('./generated/swagger.json'),
         {
-          customCss: '.curl-command { display: none; }'
+          customCss: '.curl-command { display: none; }',
         },
       ),
     );

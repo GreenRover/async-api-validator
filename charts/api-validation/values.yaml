@@ -1,0 +1,8 @@
+# Url part of the cluster
+clusterurl: apps.trs01t.sbb-aws-test.net
+# The image pull policy
+imagePullPolicy: Always
+# product
+product: api-validation
+# splunk_index
+splunkIndex: sbb_ocp_internal_dev_events

@@ -1,0 +1,80 @@
+{
+    "mainBranch": "master",
+    "docker": {
+        "dockerFile": "Dockerfile",
+        "artifactoryDockerRepo": "tms.docker",
+        "openshiftAppName": "api-validation"
+    },
+    "helm": {
+        "release": "api-validation",
+        "chart": "api-validation"
+    },
+    "npm": {
+        "targetRepo": "tms",
+        "additionalNpmScripts": "build"
+    },
+    "credentials": [
+        {
+            "id": "browserstack",
+            "type": "usernamePassword",
+            "usernameVariable": "BROWSERSTACK_USERNAME",
+            "passwordVariable": "BROWSERSTACK_ACCESS_KEY"
+        }
+    ],
+    "stages": [
+        {
+            "stageName": "api-validation-dev",
+            "isOpenshiftDeploymentEnabled": true,
+            "openshiftCluster": "aws_trs01t",
+            "openshiftProject": "api-validation-dev",
+            "openshiftJenkinsCredentialsId": "ssp-h6tn4mpn6-xtk9-kxh2-355x-4arzjr27gt0",
+            "preCiDeploymentJob": "",
+            "postCiDeploymentJob": ""
+        },
+        {
+            "stageName": "api-validation-prod",
+            "isOpenshiftDeploymentEnabled": true,
+            "openshiftCluster": "aws_trs01p",
+            "openshiftProject": "api-validation",
+            "openshiftJenkinsCredentialsId": "ssp-r6jzur69m-7390-98d6-jrhy-q91gtjq7358",
+            "preCiDeploymentJob": "",
+            "postCiDeploymentJob": ""
+        }
+    ],
+    "steps": [
+        {
+            "stepType": "continuous",
+            "isBuildEnabled": true,
+            "branchNamePrefixes": [
+                "feature",
+                "private"
+            ],
+            "additionalBuildParams": "-DskipITs"
+        },
+        {
+            "stepType": "integrationBuild",
+            "isBuildEnabled": true,
+            "xrayScanEnabled": true,
+            "failOnXrayScan": false,
+            "sonarScanEnabled": false,
+            "staging": {
+                "stagingType": "simple",
+                "stages": [
+                    "api-validation-dev"
+                ]
+            },
+            "triggerBuildOnCommitEnabled": true
+        },
+        {
+            "stepType": "release",
+            "preCiStepJob": "",
+            "isBuildEnabled": true,
+            "xrayScanEnabled": true,
+            "failOnXrayScan": true,
+            "sonarScanEnabled": false,
+            "additionalBuildParams": "-DskipITs",
+            "triggerBuildOnCommitEnabled": false,
+            "hotfixCreationEnabled": false
+        }
+    ]
+}

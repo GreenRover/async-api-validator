@@ -1,14 +1,19 @@
 FROM node:16.13
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
-COPY package.json /usr/src/app/
-RUN npm install
+ARG ARTIFACTORY_USER
+ARG ARTIFACTORY_PW
+ARG VERSION
 
-COPY . /usr/src/app
-RUN npm run build
+WORKDIR /usr/src/app
+
+# Download sources from Repository
+ADD https://${ARTIFACTORY_USER}:${ARTIFACTORY_PW}@bin.sbb.ch/artifactory/api/npm/tms.npm/api-validator/-/api-validator-${VERSION}.tgz app.tar.gz
+
+# Extract and move to nginx html folder
+RUN tar -xzf app.tar.gz --strip-components=1 -C /usr/src/app
 
 ENV NODE_ENV docker
+
 
 EXPOSE 8060
 

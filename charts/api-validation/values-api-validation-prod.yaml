@@ -1,0 +1,6 @@
+# Url part of the cluster
+clusterurl: apps.trs01p.sbb-aws.net
+hostnamePrefix: api-validation
+
+# The image pull policy
+imagePullPolicy: IfNotPresent

@@ -1,9 +1,9 @@
-import { Controller, Post, Query, Response, Route, SuccessResponse, Tags, Body, Consumes } from 'tsoa';
+import { Body, Consumes, Controller, Post, Query, Response, Route, SuccessResponse, Tags } from 'tsoa';
 import { AsyncApiValidator } from '../function/asyncApiValidator';
 import { ValidationResults } from './validationResults';
 
 export interface StringBody {
-    name: string
+    name: string;
 }
 
 @Route('/asyncapi')
@@ -20,7 +20,7 @@ export class AsyncApiController extends Controller {
     public async validateSchema(
         /**
          * JSON or YAML of the AsyncAPI schema to be validated.
-         * @example 
+         * @example
          *   asyncapi: 2.2.0
          *    info:
          *      title: Hello world application
@@ -35,7 +35,12 @@ export class AsyncApiController extends Controller {
          */
         @Body() schemaToValidate: string,
 
+        /**
+         * Set to true when you use: https://www.jsonschema2pojo.org/
+         * To ignore the custom attributes.
+         */
         @Query() allowJsonschema2pojo: boolean = false,
+
         /**
          * Additional extra checks to check if:
          * - Your api contains descripotions for all relewant types.
