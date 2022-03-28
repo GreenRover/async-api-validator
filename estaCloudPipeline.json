@@ -9,18 +9,6 @@
         "release": "api-validation",
         "chart": "api-validation"
     },
-    "npm": {
-        "targetRepo": "tms",
-        "additionalNpmScripts": "build"
-    },
-    "credentials": [
-        {
-            "id": "browserstack",
-            "type": "usernamePassword",
-            "usernameVariable": "BROWSERSTACK_USERNAME",
-            "passwordVariable": "BROWSERSTACK_ACCESS_KEY"
-        }
-    ],
     "stages": [
         {
             "stageName": "api-validation-dev",
