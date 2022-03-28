@@ -11,6 +11,7 @@ ADD https://${ARTIFACTORY_USER}:${ARTIFACTORY_PW}@bin.sbb.ch/artifactory/api/npm
 
 # Extract and move to nginx html folder
 RUN tar -xzf app.tar.gz --strip-components=1 -C /usr/src/app
+RUN npm ci
 
 ENV NODE_ENV docker
 
