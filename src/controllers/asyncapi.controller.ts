@@ -51,6 +51,7 @@ export class AsyncApiController extends Controller {
         const validator = new AsyncApiValidator();
         validator.supportJsonschema2pojo = allowJsonschema2pojo;
         validator.checkHavingExamples = checkQuality;
+        validator.checkHavingDescription = checkQuality;
 
         const valResult = await validator.validate(schemaToValidate);
 

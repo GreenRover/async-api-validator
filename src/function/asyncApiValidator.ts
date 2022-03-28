@@ -7,6 +7,7 @@ export class AsyncApiValidator {
 
     public supportJsonschema2pojo = false;
     public checkHavingExamples = false;
+    public checkHavingDescription = false;
 
     public constructor() {
         this.ajv = new Ajv({
@@ -85,6 +86,9 @@ export class AsyncApiValidator {
 
             if (this.checkHavingExamples) {
                 results.push(...this.checkExamples(json, title + ' '));
+            }
+            if (this.checkHavingDescription) {
+                results.push(...this.checkDescription(json, title + ' '));
             }
         } catch (e) {
             results.push({
@@ -167,6 +171,78 @@ export class AsyncApiValidator {
             {
                 item: item,
                 error: 'missing example',
+                context: JSON.stringify(schema.json(), null, 2),
+            },
+        ];
+    }
+
+    private checkDescription(schema: AsyncAPIParser.Schema, title: string) {
+        const results: ValidationResult[] = [];
+
+        let types = schema.type();
+        if (!types) {
+            types = [];
+        } else if (!Array.isArray(types)) {
+            types = [types];
+        }
+
+        results.push(...this.checkDescriptionExists(schema, title));
+
+        for (const type of types) {
+            switch (type.toLowerCase()) {
+                case 'array':
+                    if (Array.isArray(schema.items())) {
+                        for (const subSchema of schema.items() as AsyncAPIParser.Schema[]) {
+                            results.push(...this.checkDescription(subSchema, title + '.items'));
+                        }
+                    } else {
+                        results.push(...this.checkDescription(schema.items() as AsyncAPIParser.Schema, title + '.items'));
+                    }
+                    break;
+                case 'object':
+                    if (schema.oneOf() != null) {
+                        schema.oneOf().forEach(child => {
+                            results.push(...this.checkDescription(child, title + '.oneOf.' + schema.$id));
+                        });
+                    }
+                    if (schema.allOf() != null) {
+                        schema.allOf().forEach(child => {
+                            results.push(...this.checkDescription(child, title + '.allOf.' + schema.$id));
+                        });
+                    }
+                    if (schema.anyOf() != null) {
+                        schema.anyOf().forEach(child => {
+                            results.push(...this.checkDescription(child, title + '.anyOf.' + schema.$id));
+                        });
+                    }
+
+                    for (const [key, value] of Object.entries(schema.properties())) {
+                        results.push(...this.checkDescription(value, title + '.properties.' + key));
+                    }
+                    break;
+                case 'string':
+                case 'integer':
+                case 'number':
+                case 'boolean':
+                case 'null':
+                default:
+                    // No special handling required
+                    break;
+            }
+        }
+
+        return results;
+    }
+
+    private checkDescriptionExists(schema: AsyncAPIParser.Schema, item: string): ValidationResult[] {
+        if (schema.description()) {
+            return [];
+        }
+
+        return [
+            {
+                item: item,
+                error: 'missing description',
                 context: JSON.stringify(schema.json(), null, 2),
             },
         ];
