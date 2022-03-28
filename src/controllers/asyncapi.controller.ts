@@ -50,16 +50,15 @@ export class AsyncApiController extends Controller {
     ): Promise<ValidationResults> {
         const validator = new AsyncApiValidator();
         validator.supportJsonschema2pojo = allowJsonschema2pojo;
+        validator.checkHavingExamples = checkQuality;
 
         const valResult = await validator.validate(schemaToValidate);
 
-        this.setStatus(valResult == null ? 201 : 422);
+        this.setStatus(valResult.length < 1 ? 201 : 422);
 
         return {
-            schemaIsValid: valResult == null,
-            results: [
-                valResult,
-            ],
+            schemaIsValid: valResult.length < 1,
+            results: valResult,
         };
     }
 

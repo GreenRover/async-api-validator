@@ -1,6 +1,6 @@
 export interface ValidationResult {
-    msg: string;
-    exception?: any;
+    item: string;
+    error: string;
     context?: string;
 }
 
