@@ -41,11 +41,14 @@ export class AsyncApiValidator {
             const channel = asyncApiDoc.channel(channelName);
 
             if (channel.subscribe()) {
-                const schemaIdMsg = channel.subscribe().message().payload().json('x-parser-schema-id');
-                results.push(...this.checkJsonSchema(
-                    channel.subscribe().message().payload(),
-                    'Schema of ' + (schemaIdMsg || (channelName + ' subscribe message payload')),
-                ));
+                const payload = channel.subscribe().message().payload();
+                if (payload) {
+                    const schemaIdMsg = payload.json('x-parser-schema-id');
+                    results.push(...this.checkJsonSchema(
+                        payload,
+                        'Schema of ' + (schemaIdMsg || (channelName + ' subscribe message payload')),
+                    ));
+                }
 
                 if (channel.subscribe().message().headers()) {
                     results.push(...this.checkJsonSchema(
@@ -56,13 +59,15 @@ export class AsyncApiValidator {
             }
 
             if (channel.publish()) {
+                const payload = channel.publish().message().payload();
+                if (payload) {
+                    const schemaIdMsg = payload.json('x-parser-schema-id');
 
-                const schemaIdMsg = channel.publish().message().payload().json('x-parser-schema-id');
-
-                results.push(...this.checkJsonSchema(
-                    channel.publish().message().payload(),
-                    'Schema of ' + (schemaIdMsg || (channelName + ' publish message payload')),
-                ));
+                    results.push(...this.checkJsonSchema(
+                        payload,
+                        'Schema of ' + (schemaIdMsg || (channelName + ' publish message payload')),
+                    ));
+                }
 
                 if (channel.publish().message().headers()) {
                     results.push(...this.checkJsonSchema(
