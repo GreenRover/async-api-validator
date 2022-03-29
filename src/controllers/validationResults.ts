@@ -1,4 +1,7 @@
 export interface ValidationResult {
+    /**
+     * Supposed to unique
+     */
     item: string;
     error: string;
     context?: string;

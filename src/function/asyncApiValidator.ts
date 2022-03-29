@@ -174,7 +174,7 @@ export class AsyncApiValidator {
 
         return [
             {
-                item: item,
+                item: item + '.example',
                 error: 'missing example',
                 context: JSON.stringify(schema.json(), null, 2),
             },
@@ -197,27 +197,27 @@ export class AsyncApiValidator {
             switch (type.toLowerCase()) {
                 case 'array':
                     if (Array.isArray(schema.items())) {
-                        for (const subSchema of schema.items() as AsyncAPIParser.Schema[]) {
-                            results.push(...this.checkDescription(subSchema, title + '.items'));
-                        }
+                        (schema.items() as AsyncAPIParser.Schema[]).forEach((subSchema, i) => {
+                            results.push(...this.checkDescription(subSchema, title + '.items[' + i + ']'));
+                        });
                     } else {
                         results.push(...this.checkDescription(schema.items() as AsyncAPIParser.Schema, title + '.items'));
                     }
                     break;
                 case 'object':
                     if (schema.oneOf() != null) {
-                        schema.oneOf().forEach(child => {
-                            results.push(...this.checkDescription(child, title + '.oneOf.' + schema.$id));
+                        schema.oneOf().forEach((child, i) => {
+                            results.push(...this.checkDescription(child, title + '.oneOf[' + i + ']'));
                         });
                     }
                     if (schema.allOf() != null) {
-                        schema.allOf().forEach(child => {
-                            results.push(...this.checkDescription(child, title + '.allOf.' + schema.$id));
+                        schema.allOf().forEach((child, i) => {
+                            results.push(...this.checkDescription(child, title + '.allOf[' + i + ']'));
                         });
                     }
                     if (schema.anyOf() != null) {
-                        schema.anyOf().forEach(child => {
-                            results.push(...this.checkDescription(child, title + '.anyOf.' + schema.$id));
+                        schema.anyOf().forEach((child, i) => {
+                            results.push(...this.checkDescription(child, title + '.anyOf[' + i + ']'));
                         });
                     }
 
@@ -246,7 +246,7 @@ export class AsyncApiValidator {
 
         return [
             {
-                item: item,
+                item: item + '.description',
                 error: 'missing description',
                 context: JSON.stringify(schema.json(), null, 2),
             },
