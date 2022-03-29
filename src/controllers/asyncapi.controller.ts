@@ -1,4 +1,4 @@
-import { Body, Consumes, Controller, Post, Query, Response, Route, SuccessResponse, Tags } from 'tsoa';
+import { Body, Consumes, Controller, Post, Query, Route, SuccessResponse, Tags } from 'tsoa';
 import { AsyncApiValidator } from '../function/asyncApiValidator';
 import { ValidationResults } from './validationResults';
 
@@ -15,8 +15,7 @@ export class AsyncApiController extends Controller {
      */
     @Post('/validate')
     @Consumes('text/plain')
-    @SuccessResponse('201', 'Schema is validate')
-    @Response<ValidationResults>(422, 'Validation Failed')
+    @SuccessResponse('200', 'Schema was validated')
     public async validateSchema(
         /**
          * JSON or YAML of the AsyncAPI schema to be validated.
@@ -34,13 +33,11 @@ export class AsyncApiController extends Controller {
          *              pattern: '^hello .+$'
          */
         @Body() schemaToValidate: string,
-
         /**
          * Set to true when you use: https://www.jsonschema2pojo.org/
          * To ignore the custom attributes.
          */
         @Query() allowJsonschema2pojo: boolean = false,
-
         /**
          * Additional extra checks to check if:
          * - Your api contains descripotions for all relewant types.
@@ -55,7 +52,7 @@ export class AsyncApiController extends Controller {
 
         const valResult = await validator.validate(schemaToValidate);
 
-        this.setStatus(valResult.length < 1 ? 201 : 422);
+        this.setStatus(200);
 
         return {
             schemaIsValid: valResult.length < 1,
