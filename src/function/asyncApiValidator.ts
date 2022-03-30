@@ -43,7 +43,7 @@ export class AsyncApiValidator {
             if (channel.subscribe()) {
                 const payload = channel.subscribe().message().payload();
                 if (payload) {
-                    const schemaIdMsg = payload.json('x-parser-schema-id');
+                    const schemaIdMsg = this.getSchemaId(payload);
                     results.push(...this.checkJsonSchema(
                         payload,
                         'Schema of ' + (schemaIdMsg || (channelName + ' subscribe message payload')),
@@ -61,7 +61,7 @@ export class AsyncApiValidator {
             if (channel.publish()) {
                 const payload = channel.publish().message().payload();
                 if (payload) {
-                    const schemaIdMsg = payload.json('x-parser-schema-id');
+                    const schemaIdMsg = this.getSchemaId(payload);
 
                     results.push(...this.checkJsonSchema(
                         payload,
@@ -191,17 +191,20 @@ export class AsyncApiValidator {
             types = [types];
         }
 
-        results.push(...this.checkDescriptionExists(schema, title));
-
         for (const type of types) {
             switch (type.toLowerCase()) {
                 case 'array':
                     if (Array.isArray(schema.items())) {
+                        results.push(...this.checkDescriptionExists(schema, title));
                         (schema.items() as AsyncAPIParser.Schema[]).forEach((subSchema, i) => {
                             results.push(...this.checkDescription(subSchema, title + '.items[' + i + ']'));
                         });
                     } else {
-                        results.push(...this.checkDescription(schema.items() as AsyncAPIParser.Schema, title + '.items'));
+                        const item = schema.items() as AsyncAPIParser.Schema;
+                        if (item.type() && item.type() !== 'object') {
+                            results.push(...this.checkDescriptionExists(schema, title));
+                        }
+                        results.push(...this.checkDescription(item, title + '.items'));
                     }
                     break;
                 case 'object':
@@ -221,6 +224,9 @@ export class AsyncApiValidator {
                         });
                     }
 
+                    if (schema.properties()) {
+                        results.push(...this.checkDescriptionExists(schema, title));
+                    }
                     for (const [key, value] of Object.entries(schema.properties())) {
                         results.push(...this.checkDescription(value, title + '.properties.' + key));
                     }
@@ -231,7 +237,7 @@ export class AsyncApiValidator {
                 case 'boolean':
                 case 'null':
                 default:
-                    // No special handling required
+                    results.push(...this.checkDescriptionExists(schema, title));
                     break;
             }
         }
@@ -326,5 +332,15 @@ export class AsyncApiValidator {
                 this.stripJsonschema2pojoKeywords(value);
             }
         }
+    }
+
+    private getSchemaId(payload: AsyncAPIParser.Schema): string {
+        const schemaId = payload.json('x-parser-schema-id');
+
+        if (schemaId && schemaId.indexOf('anonymous-schema')) {
+            return undefined;
+        }
+
+        return schemaId;
     }
 }
