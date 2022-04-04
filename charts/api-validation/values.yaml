@@ -5,4 +5,4 @@ imagePullPolicy: Always
 # product
 product: api-validation
 # splunk_index
-splunkIndex: sbb_ocp_internal_dev_events
+splunkIndex: sbb_tms-ssp_internal_prod_events
