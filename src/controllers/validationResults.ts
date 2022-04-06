@@ -14,3 +14,11 @@ export interface ValidationResults {
     schemaIsValid: boolean;
     results: ValidationResult[];
 }
+
+export interface JsonSchema {
+    /**
+     * Supposed to unique
+     */
+    item: string;
+    schema: string;
+}

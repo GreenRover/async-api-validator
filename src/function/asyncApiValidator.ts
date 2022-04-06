@@ -1,7 +1,7 @@
 import * as AsyncAPIParser from '@asyncapi/parser';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import { ValidationResult } from '../controllers/validationResults';
+import { JsonSchema, ValidationResult } from '../controllers/validationResults';
 
 export class AsyncApiValidator {
 
@@ -74,6 +74,64 @@ export class AsyncApiValidator {
                         channel.publish().message().headers(),
                         'Schema of ' + (channelName + ' publish message header'),
                     ));
+                }
+            }
+        }
+
+        return results;
+    }
+
+    public async extractJsonschema(schema: string): Promise<JsonSchema[]> {
+        let asyncApiDoc: AsyncAPIParser.AsyncAPIDocument;
+        try {
+            asyncApiDoc = await AsyncAPIParser.parse(
+                schema,
+            );
+        } catch (err) {
+            throw [{
+                item: 'asyncApi',
+                error: this._formatError(err),
+            }];
+        }
+
+        const results: JsonSchema[] = [];
+        for (const channelName of asyncApiDoc.channelNames()) {
+            const channel = asyncApiDoc.channel(channelName);
+
+            if (channel.subscribe()) {
+                const payload = channel.subscribe().message().payload();
+                if (payload) {
+                    const schemaIdMsg = this.getSchemaId(payload);
+                    results.push({
+                        item: 'Schema of ' + (schemaIdMsg || (channelName + ' subscribe message payload')),
+                        schema: payload.json(),
+                    });
+                }
+
+                if (channel.subscribe().message().headers()) {
+                    results.push({
+                        item: 'Schema of ' + (channelName + ' subscribe message header'),
+                        schema: channel.subscribe().message().headers().json(),
+                    });
+                }
+            }
+
+            if (channel.publish()) {
+                const payload = channel.publish().message().payload();
+                if (payload) {
+                    const schemaIdMsg = this.getSchemaId(payload);
+
+                    results.push({
+                        item: 'Schema of ' + (schemaIdMsg || (channelName + ' publish message payload')),
+                        schema: payload.json(),
+                    });
+                }
+
+                if (channel.publish().message().headers()) {
+                    results.push({
+                        item: 'Schema of ' + (channelName + ' publish message header'),
+                        schema: channel.publish().message().headers().json(),
+                    });
                 }
             }
         }
