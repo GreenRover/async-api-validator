@@ -15,7 +15,7 @@
             "isOpenshiftDeploymentEnabled": true,
             "openshiftCluster": "aws_trs01t",
             "openshiftProject": "api-validation-dev",
-            "openshiftJenkinsCredentialsId": "ssp-h6tn4mpn6-xtk9-kxh2-355x-4arzjr27gt0",
+            "openshiftJenkinsCredentialsId": "DEVREL-api-validation-dev-token",
             "preCiDeploymentJob": "",
             "postCiDeploymentJob": ""
         },
@@ -24,7 +24,7 @@
             "isOpenshiftDeploymentEnabled": true,
             "openshiftCluster": "aws_trs01p",
             "openshiftProject": "api-validation",
-            "openshiftJenkinsCredentialsId": "ssp-r6jzur69m-7390-98d6-jrhy-q91gtjq7358",
+            "openshiftJenkinsCredentialsId": "DEVREL-api-validation-prod-token",
             "preCiDeploymentJob": "",
             "postCiDeploymentJob": ""
         }
