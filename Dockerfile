@@ -1,4 +1,4 @@
-FROM node:16.13
+FROM dockerio.docker.bin.sbb.ch/library/node:16.13
 
 ARG ARTIFACTORY_USER
 ARG ARTIFACTORY_PW
