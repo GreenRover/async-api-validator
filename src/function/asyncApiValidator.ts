@@ -1,7 +1,18 @@
 import * as AsyncAPIParser from '@asyncapi/parser';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
+
+import * as asyncApim240Schema from '../schemas/asyncapi_2.4.0_schema.json';
+import * as asyncApim240ExternalDocs from '../schemas/asyncapi_2.4.0_externalDocs.json';
+import * as asyncApim240SpecificationExtension from '../schemas/asyncapi_2.4.0_specificationExtension.json';
+
+import * as asyncApim230Schema from '../schemas/asyncapi_2.3.0_schema.json';
+import * as asyncApim230ExternalDocs from '../schemas/asyncapi_2.3.0_externalDocs.json';
+import * as asyncApim230SpecificationExtension from '../schemas/asyncapi_2.3.0_specificationExtension.json';
+
 import { ValidationResult } from '../controllers/validationResults';
+
+const DEFAULT_SCHEMA = 'http://asyncapi.com/definitions/2.3.0/schema.json';
 
 export class AsyncApiValidator {
 
@@ -19,6 +30,14 @@ export class AsyncApiValidator {
         });
 
         addFormats(this.ajv);
+
+        this.ajv.addMetaSchema(asyncApim230SpecificationExtension, 'http://asyncapi.com/definitions/2.3.0/specificationExtension.json', false);
+        this.ajv.addMetaSchema(asyncApim230ExternalDocs, 'http://asyncapi.com/definitions/2.3.0/externalDocs.json', false);
+        this.ajv.addMetaSchema(asyncApim230Schema, 'http://asyncapi.com/definitions/2.3.0/schema.json', false);
+
+        this.ajv.addMetaSchema(asyncApim240SpecificationExtension, 'http://asyncapi.com/definitions/2.4.0/specificationExtension.json', false);
+        this.ajv.addMetaSchema(asyncApim240ExternalDocs, 'http://asyncapi.com/definitions/2.4.0/externalDocs.json', false);
+        this.ajv.addMetaSchema(asyncApim240Schema, 'http://asyncapi.com/definitions/2.4.0/schema.json', false);
     }
 
     private ajv: Ajv;
@@ -86,7 +105,7 @@ export class AsyncApiValidator {
 
         try {
             this.ajv.compile(
-                this.normaliseSchema(json.json()),
+                this.normalizeSchema(json.json()),
             );
 
             if (this.checkHavingExamples) {
@@ -271,7 +290,7 @@ export class AsyncApiValidator {
         return `${title}\n${details}`;
     }
 
-    private normaliseSchema(json: any): any {
+    private normalizeSchema(json: any): any {
         this.stripAsyncApiXKeywords(json);
 
         if (this.supportJsonschema2pojo) {
@@ -279,7 +298,7 @@ export class AsyncApiValidator {
         }
 
 
-        json.$schema = 'http://json-schema.org/draft-07/schema';
+        json.$schema = DEFAULT_SCHEMA;
         return json;
     }
 
