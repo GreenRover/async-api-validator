@@ -2,13 +2,7 @@ import * as AsyncAPIParser from '@asyncapi/parser';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
-import * as asyncApim240Schema from '../schemas/asyncapi_2.4.0_schema.json';
-import * as asyncApim240ExternalDocs from '../schemas/asyncapi_2.4.0_externalDocs.json';
-import * as asyncApim240SpecificationExtension from '../schemas/asyncapi_2.4.0_specificationExtension.json';
-
 import * as asyncApim230Schema from '../schemas/asyncapi_2.3.0_schema.json';
-import * as asyncApim230ExternalDocs from '../schemas/asyncapi_2.3.0_externalDocs.json';
-import * as asyncApim230SpecificationExtension from '../schemas/asyncapi_2.3.0_specificationExtension.json';
 
 import { ValidationResult } from '../controllers/validationResults';
 
@@ -27,17 +21,36 @@ export class AsyncApiValidator {
             strictSchema: true,
             validateSchema: true,
             removeAdditional: false,
+            allowUnionTypes: true,
         });
 
         addFormats(this.ajv);
 
-        this.ajv.addMetaSchema(asyncApim230SpecificationExtension, 'http://asyncapi.com/definitions/2.3.0/specificationExtension.json', false);
-        this.ajv.addMetaSchema(asyncApim230ExternalDocs, 'http://asyncapi.com/definitions/2.3.0/externalDocs.json', false);
-        this.ajv.addMetaSchema(asyncApim230Schema, 'http://asyncapi.com/definitions/2.3.0/schema.json', false);
+        this.ajv.addSchema(asyncApim230Schema, 'http://asyncapi.com/definitions/2.3.0/schema.json');
 
-        this.ajv.addMetaSchema(asyncApim240SpecificationExtension, 'http://asyncapi.com/definitions/2.4.0/specificationExtension.json', false);
-        this.ajv.addMetaSchema(asyncApim240ExternalDocs, 'http://asyncapi.com/definitions/2.4.0/externalDocs.json', false);
-        this.ajv.addMetaSchema(asyncApim240Schema, 'http://asyncapi.com/definitions/2.4.0/schema.json', false);
+        // Add keywords for async api mixed ins.
+        this.ajv.addKeyword({
+            keyword: 'discriminator',
+            type: 'string',
+        });
+        this.ajv.addKeyword({
+            keyword: 'externalDocs',
+            metaSchema: {
+                type: 'object',
+                required: [
+                    'url',
+                ],
+                properties: {
+                    description: {
+                        type: 'string',
+                    },
+                    url: {
+                        type: 'string',
+                        format: 'uri',
+                    },
+                },
+            },
+        });
     }
 
     private ajv: Ajv;
