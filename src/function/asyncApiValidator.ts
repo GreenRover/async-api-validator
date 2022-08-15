@@ -2,9 +2,9 @@ import * as AsyncAPIParser from '@asyncapi/parser';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
-import * as asyncApim230Schema from '../schemas/asyncapi_2.3.0_schema.json';
-
 import { ValidationResult } from '../controllers/validationResults';
+
+import * as asyncApim230Schema from '../schemas/asyncapi_2.3.0_schema.json';
 
 const DEFAULT_SCHEMA = 'http://asyncapi.com/definitions/2.3.0/schema.json';
 
@@ -72,7 +72,7 @@ export class AsyncApiValidator {
         for (const channelName of asyncApiDoc.channelNames()) {
             const channel = asyncApiDoc.channel(channelName);
 
-            if (channel.subscribe()) {
+            if (channel.subscribe() && channel.subscribe().message()) {
                 const payload = channel.subscribe().message().payload();
                 if (payload) {
                     const schemaIdMsg = this.getSchemaId(payload);
@@ -90,7 +90,7 @@ export class AsyncApiValidator {
                 }
             }
 
-            if (channel.publish()) {
+            if (channel.publish() && channel.publish().message()) {
                 const payload = channel.publish().message().payload();
                 if (payload) {
                     const schemaIdMsg = this.getSchemaId(payload);
