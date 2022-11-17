@@ -10,11 +10,11 @@ spec:
   selector:
     app: {{ $.Values.product }}
   strategy:
-    activeDeadlineSeconds: 21600
-    recreateParams:
-      timeoutSeconds: 600
-    resources: {}
-    type: Recreate
+    type: Rolling
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
   template:
     metadata:
       creationTimestamp: null
@@ -23,36 +23,37 @@ spec:
       annotations:
         collectord.io/logs-output: splunk::prod
         collectord.io/logs-index: {{ $.Values.splunkIndex }}
-{{- include "timestamp.onlatest" (dict "Values" $.Values "imageVersion" $.Chart.AppVersion) | indent 8 }}
+    {{- include "timestamp.onlatest" (dict "Values" $.Values "imageVersion" $.Chart.AppVersion) | indent 8 }}
     spec:
       containers:
-      - name: {{ $.Values.product }}
-        image: docker.bin.sbb.ch/tms/api-validation:{{ $.Chart.AppVersion }}
-        imagePullPolicy: {{ $.Values.imagePullPolicy }}
-        env:
-        - name: TZ
-          value: UTC
-        - name: VERSION
-          value: {{ $.Chart.AppVersion }}
-        ports:
-        - containerPort: 8060
-          protocol: TCP
-        resources:
-          requests:
-            cpu: 100m
-            memory: 100Mi
-          limits:
-            cpu: 500m
-            memory: 250Mi
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 8060
-            scheme: HTTP
-          initialDelaySeconds: 60
-          timeoutSeconds: 30
-          periodSeconds: 20
-          successThreshold: 1
+        - name: {{ $.Values.product }}
+          image:
+            docker.bin.sbb.ch/tms/api-validation:{{ $.Chart.AppVersion }}
+          imagePullPolicy: {{ $.Values.imagePullPolicy }}
+          env:
+            - name: TZ
+              value: UTC
+            - name: VERSION
+              value: {{ $.Chart.AppVersion }}
+          ports:
+            - containerPort: 8060
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 500m
+              memory: 250Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8060
+              scheme: HTTP
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+            periodSeconds: 20
+            successThreshold: 1
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
