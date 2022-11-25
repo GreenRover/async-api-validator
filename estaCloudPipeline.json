@@ -23,7 +23,7 @@
             "stageName": "api-validation-prod",
             "isOpenshiftDeploymentEnabled": true,
             "openshiftCluster": "aws_trs01p",
-            "openshiftProject": "api-validation",
+            "openshiftProject": "api-validation-prod",
             "openshiftJenkinsCredentialsId": "DEVREL-api-validation-prod-token",
             "preCiDeploymentJob": "",
             "postCiDeploymentJob": ""
