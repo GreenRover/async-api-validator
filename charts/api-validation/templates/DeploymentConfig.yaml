@@ -23,7 +23,6 @@ spec:
             annotations:
                 collectord.io/logs-output: splunk::prod
                 collectord.io/logs-index: {{ $.Values.splunkIndex }}
-        {{- include "timestamp.onlatest" (dict "Values" $.Values "imageVersion" $.Chart.AppVersion) | indent 8 }}
         spec:
             containers:
                 -   name: {{ $.Values.product }}
