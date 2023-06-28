@@ -1,0 +1,135 @@
+{
+  "$schema": "https://clew-resources.sbb-cloud.net/tekton-schema.json",
+  "productName": "api-validation",
+  "npm": {
+    "targetRepo": "tms",
+    "additionalNpmScripts": "build:ngssc"
+  },
+  "docker": {
+    "artifactoryDockerRepo": "tms.docker",
+    "dockerFile": "./Dockerfile",
+    "imageName": "api-validation"
+  },
+  "helm": {
+    "chartFilePath": "./charts/api-validation/Chart.yaml"
+  },
+  "pipelines": [
+    {
+      "name": "continuous",
+      "triggerType": [
+        "GITEVENT",
+        "USER"
+      ],
+      "branchNamePrefixes": [
+        "master"
+      ],
+      "build": {
+        "versionTag": "rev-${GIT_REV_SHORT}",
+        "deployArtifacts": true,
+        "buildDockerImage": true,
+        "sonarScan": {
+          "enabled": false
+        }
+      },
+      "tasks": [
+        {
+          "name": "lint",
+          "taskRef": "esta-custom-exec",
+          "params": {
+            "SCRIPT": "set +e; ./validate.sh --kubelint --kubeconform",
+            "RUN_IMAGE": "esta.docker.bin.sbb.ch/esta/esta-tekton-pipeline-helm-builderimage:1.7.0"
+          },
+          "runAfter": "git-clone"
+        }
+      ],
+      "stages": [
+        "continuous-int"
+      ]
+    },
+    {
+      "name": "trigger-on-tag",
+      "branchNamePrefixes": [],
+      "triggerType": [
+        "GITEVENT"
+      ],
+      "versionTagEventPatterns": [
+        "^(\\d+\\.)?(\\d+\\.)?(\\*|\\d+)$"
+      ],
+      "build": {
+        "deployArtifacts": true,
+        "buildDockerImage": true,
+        "sonarScan": {
+          "enabled": false
+        }
+      },
+      "stages": []
+    },
+    {
+      "name": "private-feature-hotfix",
+      "triggerType": [
+        "GITEVENT",
+        "USER"
+      ],
+      "branchNamePrefixes": [
+        "private",
+        "feature",
+        "hotfix"
+      ],
+      "build": {
+        "versionTag": "rev-${GIT_REV_SHORT}",
+        "deployArtifacts": false,
+        "buildDockerImage": true,
+        "sonarScan": {
+          "enabled": false
+        }
+      },
+      "tasks": [
+        {
+          "name": "lint",
+          "taskRef": "esta-custom-exec",
+          "params": {
+            "SCRIPT": "set +e; ./validate.sh --kubelint --kubeconform",
+            "RUN_IMAGE": "esta.docker.bin.sbb.ch/esta/esta-tekton-pipeline-helm-builderimage:1.7.0"
+          },
+          "runAfter": "git-clone"
+        }
+      ],
+      "stages": [
+        "branch-int"
+      ]
+    }
+  ],
+  "notifications": [
+    {
+      "type": "EMAIL",
+      "eventTypes": [
+        "FAILURE"
+      ],
+      "recipients": [
+        "$actor"
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "stageName": "continuous-int",
+      "helm": {
+        "sourceRepository": "https://code.sbb.ch/scm/tp_tms_plattform/selfservice-portal-argocd-app-of-apps.git",
+        "chartFilePath": "clusters/trs01t/applications/values.yaml",
+        "versionProperties": [
+          ".latestContinuousHash.rootApiValidation"
+        ]
+      }
+    },
+    {
+      "stageName": "branch-int",
+      "helm": {
+        "sourceRepository": "https://code.sbb.ch/scm/tp_tms_plattform/selfservice-portal-argocd-app-of-apps.git",
+        "chartFilePath": "clusters/trs01t/applications/values.yaml",
+        "versionProperties": [
+          ".lastPushedBranchHash.rootApiValidation"
+        ]
+      }
+    }
+  ]
+}
