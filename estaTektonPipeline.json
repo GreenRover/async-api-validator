@@ -55,7 +55,7 @@
         "^(\\d+\\.)?(\\d+\\.)?(\\*|\\d+)$"
       ],
       "build": {
-        "deployArtifacts": true,
+        "deployArtifacts": false,
         "buildDockerImage": true,
         "sonarScan": {
           "enabled": false
