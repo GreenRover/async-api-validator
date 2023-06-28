@@ -24,7 +24,7 @@
       ],
       "build": {
         "versionTag": "rev-${GIT_REV_SHORT}",
-        "deployArtifacts": true,
+        "deployArtifacts": false,
         "buildDockerImage": true,
         "sonarScan": {
           "enabled": false
