@@ -2,11 +2,14 @@
     "compilerOptions": {
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
+        "esModuleInterop": true,
         "outDir": "./dist",
         "rootDir": "./src",
         "sourceMap": true,
-        "target": "es6",
+        "target": "es2016",
         "module": "commonjs",
+        "strict": true,
+        "skipLibCheck": true,
         "resolveJsonModule": true
     },
     "exclude": [

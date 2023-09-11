@@ -1,9 +1,9 @@
 import * as bodyParser from 'body-parser';
-import * as express from 'express';
+import express, { Express, Request, Response } from 'express';
 import * as swaggerUi from 'swagger-ui-express';
 import { RegisterRoutes } from './routes/routes';
 
-const app = express();
+const app: Express = express();
 const port = 8060;
 
 app.use(bodyParser.json());
@@ -12,7 +12,7 @@ app.use(bodyParser.text());
 app.use(
   '/doc',
   swaggerUi.serve,
-  async (_req: express.Request, res: express.Response) => {
+  async (_req: Request, res: Response) => {
     return res.send(
       swaggerUi.generateHTML(
         await import('./generated/swagger.json'),
@@ -23,7 +23,7 @@ app.use(
     );
   });
 
-app.get('/', (req, res) => {
+app.get('/', (_, res) => {
   res.redirect('/doc');
 });
 
