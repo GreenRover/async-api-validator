@@ -12,4 +12,4 @@ ENV NODE_ENV docker
 
 EXPOSE 8060
 
-CMD [ "npm", "run", "start:prod" ]
+CMD [ "node", "/usr/src/app/dist/index.js" ]
