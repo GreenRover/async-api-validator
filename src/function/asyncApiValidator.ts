@@ -1,391 +1,162 @@
 import { AvroSchemaParser } from '@asyncapi/avro-schema-parser';
 import { OpenAPISchemaParser } from '@asyncapi/openapi-schema-parser';
 import { AsyncAPIDocumentInterface, Parser as AsyncapiParser, SchemaInterface } from '@asyncapi/parser';
+import { ParserOptions } from '@asyncapi/parser/esm/parser';
 import { ProtoBuffSchemaParser } from '@asyncapi/protobuf-schema-parser';
 import { DiagnosticSeverity } from '@stoplight/types';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import type Uri from 'urijs';
 
 import { ValidationResult } from '../controllers/validationResults';
-
-import * as asyncApim230Schema from '../schemas/asyncapi_2.3.0_schema.json';
-
-const DEFAULT_SCHEMA = 'http://asyncapi.com/definitions/2.6.0/schema.json';
+import { ProtoReferenceJoiner } from './ProtoReferenceJoiner';
+import { SchemaValidator } from './schemaValidator';
 
 export class AsyncApiValidator {
 
-    public supportJsonschema2pojo = false;
-    public checkHavingExamples = false;
-    public checkHavingDescription = false;
+  private fileResolver: ((filename: string) => string) | undefined = undefined;
 
-    public constructor() {
-        this.ajv = new Ajv({
-            allErrors: true,
-            strictNumbers: true,
-            strictSchema: true,
-            validateSchema: true,
-            removeAdditional: false,
-            allowUnionTypes: true,
-        });
+  public supportJsonschema2pojo = false;
+  public checkHavingExamples = false;
+  public checkHavingDescription = false;
 
-        addFormats(this.ajv);
 
-        this.ajv.addSchema(asyncApim230Schema, 'http://asyncapi.com/definitions/2.3.0/schema.json');
+  public async validate(schema: string): Promise<ValidationResult[]> {
+    const parserOptions: ParserOptions = {
+      ruleset: {
+        core: true,
+        recommended: true,
+      },
+    };
 
-        // Add keywords for async api mixed ins.
-        this.ajv.addKeyword({
-            keyword: 'discriminator',
-            type: 'string',
-        });
-        this.ajv.addKeyword({
-            keyword: 'externalDocs',
-            metaSchema: {
-                type: 'object',
-                required: [
-                    'url',
-                ],
-                properties: {
-                    description: {
-                        type: 'string',
-                    },
-                    url: {
-                        type: 'string',
-                        format: 'uri',
-                    },
-                },
-            },
-        });
-    }
+    const results: ValidationResult[] = [];
 
-    private readonly ajv: Ajv;
-
-    public async validate(schema: string): Promise<ValidationResult[]> {
-        const asyncapiParser = new AsyncapiParser();
-        asyncapiParser.registerSchemaParser(OpenAPISchemaParser() as any);
-        asyncapiParser.registerSchemaParser(AvroSchemaParser() as any);
-        asyncapiParser.registerSchemaParser(ProtoBuffSchemaParser() as any);
-
-        const results: ValidationResult[] = [];
-
-        let asyncApiDoc: AsyncAPIDocumentInterface | undefined;
-        try {
-            const out =  await asyncapiParser.parse(
-                schema,
-            );
-            asyncApiDoc = out.document;
-
-            for (const diagnostic of out.diagnostics) {
-                if (diagnostic.severity == DiagnosticSeverity.Error) {
-                    results.push({
-                        item: '' + diagnostic.code,
-                        error: diagnostic.message,
-                        context: diagnostic.path.join('.'),
-                    });
-                }
-            }
-        } catch (err) {
-            return [{
-                item: 'asyncApi',
-                error: this._formatError(err),
-            }];
-        }
-
-        if (asyncApiDoc == undefined) {
-            return results;
-        }
-
-        for (const channel of asyncApiDoc.channels()) {
-            for (const message of channel.messages()) {
-                const payload = message.payload();
-                const isProtoBuf = message.schemaFormat()?.indexOf('protobuf') !== -1;
-
-                if (payload && !isProtoBuf) {
-                    let schemaIdMsg = this.getSchemaId(payload);
-                    if (!schemaIdMsg || schemaIdMsg.indexOf('anonymous') !== -1) {
-                        schemaIdMsg = message.id() + ' message payload';
-                    }
-                    if (!schemaIdMsg || schemaIdMsg.indexOf('anonymous') !== -1) {
-                        schemaIdMsg = 'channel ' + channel.id() + ' message payload';
-                    }
-
-                    results.push(...this.checkJsonSchema(
-                        payload,
-                        'Schema of ' + schemaIdMsg,
-                    ));
-                }
-
-                if (message.headers()) {
-                    results.push(...this.checkJsonSchema(
-                        message.headers() as SchemaInterface,
-                        'Schema of ' + (message.id() + ' message header'),
-                    ));
-                }
-            }
-        }
-
-        return results;
-    }
-
-    private checkJsonSchema(json: SchemaInterface, title: string) {
-        const results: ValidationResult[] = [];
-
-        try {
-            this.ajv.compile(
-                this.normalizeSchema(json.json()),
-            );
-
-            if (this.checkHavingExamples) {
-                results.push(...this.checkExamples(json, title + ' '));
-            }
-            if (this.checkHavingDescription) {
-                results.push(...this.checkDescription(json, title + ' '));
-            }
-        } catch (e: any) {
-            results.push({
-                item: title,
-                error: (e.title || e.message),
-                context: JSON.stringify(json.json(), null, 2),
-            });
-        }
-
-        return results;
-    }
-
-    private checkExamples(schema: SchemaInterface, title: string) {
-        const results: ValidationResult[] = [];
-
-        let types = schema.type();
-        if (!types) {
-            types = [];
-        } else if (!Array.isArray(types)) {
-            types = [types];
-        }
-        for (const type of types) {
-            switch (type.toLowerCase()) {
-                case 'string':
-                    if (!schema.enum() && !schema.format()) {
-                        results.push(...this.checkExampleExists(schema, title));
-                    }
-                    break;
-                case 'integer':
-                case 'number':
-                    results.push(...this.checkExampleExists(schema, title));
-                    break;
-                case 'array':
-                    if (Array.isArray(schema.items())) {
-                        for (const subSchema of schema.items() as SchemaInterface[]) {
-                            results.push(...this.checkExamples(subSchema, title + '.items'));
-                        }
-                    } else {
-                        results.push(...this.checkExamples(schema.items() as SchemaInterface, title + '.items'));
-                    }
-                    break;
-                case 'object':
-                    if (schema.oneOf()) {
-                        (schema.oneOf() as SchemaInterface[]).forEach(child => {
-                            results.push(...this.checkExamples(child, title + '.oneOf.' + schema.$id));
-                        });
-                    }
-                    if (schema.allOf()) {
-                        (schema.allOf() as SchemaInterface[]).forEach(child => {
-                            results.push(...this.checkExamples(child, title + '.allOf.' + schema.$id));
-                        });
-                    }
-                    if (schema.anyOf()) {
-                        (schema.anyOf() as SchemaInterface[]).forEach(child => {
-                            results.push(...this.checkExamples(child, title + '.anyOf.' + schema.$id));
-                        });
-                    }
-
-                    for (const [key, value] of Object.entries(schema.properties() as {[key: string]: SchemaInterface})) {
-                        results.push(...this.checkExamples(value, title + '.properties.' + key));
-                    }
-                    break;
-                case 'boolean':
-                case 'null':
-                default:
-                    // Nothing to check here.
-                    break;
-            }
-        }
-
-        return results;
-    }
-
-    private checkExampleExists(schema: SchemaInterface, item: string): ValidationResult[] {
-        if (schema.examples()) {
-            return [];
-        }
-
-        return [
+    if (this.fileResolver !== undefined) {
+      parserOptions.__unstable = {
+        resolver: {
+          cache: false,
+          resolvers: [
             {
-                item: item + '.example',
-                error: 'missing example',
-                context: JSON.stringify(schema.json(), null, 2),
+              schema: 'file',
+              order: -1,
+              canRead: true,
+              read: (uri: Uri, _ctx?: any) => this.loadFile(uri, results) as string,
             },
-        ];
+          ],
+        },
+      };
     }
 
-    private checkDescription(schema: SchemaInterface, title: string) {
-        const results: ValidationResult[] = [];
+    const asyncapiParser = new AsyncapiParser(parserOptions);
+    asyncapiParser.registerSchemaParser(OpenAPISchemaParser() as any);
+    asyncapiParser.registerSchemaParser(AvroSchemaParser() as any);
+    asyncapiParser.registerSchemaParser(ProtoBuffSchemaParser() as any);
 
-        let types = schema.type();
-        if (!types) {
-            types = [];
-        } else if (!Array.isArray(types)) {
-            types = [types];
+    let asyncApiDoc: AsyncAPIDocumentInterface | undefined;
+    try {
+      const out = await asyncapiParser.parse(
+        schema,
+      );
+      asyncApiDoc = out.document;
+
+      for (const diagnostic of out.diagnostics) {
+        if (diagnostic.severity == DiagnosticSeverity.Error) {
+          results.push({
+            item: '' + diagnostic.code,
+            error: diagnostic.message,
+            context: diagnostic.path.join('.'),
+          });
         }
-
-        for (const type of types) {
-            switch (type.toLowerCase()) {
-                case 'array':
-                    if (Array.isArray(schema.items())) {
-                        results.push(...this.checkDescriptionExists(schema, title));
-                        (schema.items() as SchemaInterface[]).forEach((subSchema, i) => {
-                            results.push(...this.checkDescription(subSchema, title + '.items[' + i + ']'));
-                        });
-                    } else {
-                        const item = schema.items() as SchemaInterface;
-                        if (item.type() && item.type() !== 'object') {
-                            results.push(...this.checkDescriptionExists(schema, title));
-                        }
-                        results.push(...this.checkDescription(item, title + '.items'));
-                    }
-                    break;
-                case 'object':
-                    if (schema.oneOf()) {
-                        (schema.oneOf() as SchemaInterface[]).forEach((child, i) => {
-                            results.push(...this.checkDescription(child, title + '.oneOf[' + i + ']'));
-                        });
-                    }
-                    if (schema.allOf()) {
-                        (schema.allOf() as SchemaInterface[]).forEach((child, i) => {
-                            results.push(...this.checkDescription(child, title + '.allOf[' + i + ']'));
-                        });
-                    }
-                    if (schema.anyOf()) {
-                        (schema.anyOf() as SchemaInterface[]).forEach((child, i) => {
-                            results.push(...this.checkDescription(child, title + '.anyOf[' + i + ']'));
-                        });
-                    }
-
-                    if (schema.properties()) {
-                        results.push(...this.checkDescriptionExists(schema, title));
-                    }
-                    for (const [key, value] of Object.entries(schema.properties() as {[key: string]: SchemaInterface})) {
-                        results.push(...this.checkDescription(value, title + '.properties.' + key));
-                    }
-                    break;
-                case 'string':
-                case 'integer':
-                case 'number':
-                case 'boolean':
-                case 'null':
-                default:
-                    results.push(...this.checkDescriptionExists(schema, title));
-                    break;
-            }
-        }
-
-        return results;
+      }
+    } catch (err) {
+      return [{
+        item: 'asyncApi',
+        error: this._formatError(err),
+      }];
     }
 
-    private checkDescriptionExists(schema: SchemaInterface, item: string): ValidationResult[] {
-        if (schema.description()) {
-            return [];
-        }
-
-        return [
-            {
-                item: item + '.description',
-                error: 'missing description',
-                context: JSON.stringify(schema.json(), null, 2),
-            },
-        ];
+    if (asyncApiDoc == undefined) {
+      return results;
     }
 
-    private _formatError(err: any) {
-        const title = err.title || err.message;
-        let details = 'Error Details: ';
-        details += err.detail ? err.detail : '';
-        if (err.validationErrors && err.validationErrors.length) {
-            err.validationErrors.forEach((element: { title: any; }) => {
-                details += '\n\t' + (element.title ? element.title : '');
-            });
+    const schemaValidator = new SchemaValidator();
+    schemaValidator.asyncApiVersion = asyncApiDoc.version();
+
+    for (const channel of asyncApiDoc.channels()) {
+      for (const message of channel.messages()) {
+        const payload = message.payload();
+
+        if (payload) {
+          let schemaIdMsg = this.getSchemaId(payload);
+          if (!schemaIdMsg || schemaIdMsg.indexOf('anonymous') !== -1) {
+            schemaIdMsg = message.id() + ' message payload';
+          }
+          if (!schemaIdMsg || schemaIdMsg.indexOf('anonymous') !== -1) {
+            schemaIdMsg = 'channel ' + channel.id() + ' message payload';
+          }
+
+          results.push(...schemaValidator.checkSchema(
+            payload,
+            message.schemaFormat(),
+            'Schema of ' + schemaIdMsg,
+          ));
         }
-        return `${title}\n${details}`;
+
+        if (message.headers()) {
+          results.push(...schemaValidator.checkSchema(
+            message.headers() as SchemaInterface,
+            message.schemaFormat(),
+            'Schema of ' + (message.id() + ' message header'),
+          ));
+        }
+      }
     }
 
-    private normalizeSchema(json: any): any {
-        this.stripAsyncApiXKeywords(json);
+    return results;
+  }
 
-        if (this.supportJsonschema2pojo) {
-            this.stripJsonschema2pojoKeywords(json); // https://www.jsonschema2pojo.org/
-        }
+  private _formatError(err: any) {
+    const title = err.title || err.message;
+    let details = 'Error Details: ';
+    details += err.detail ? err.detail : '';
+    if (err.validationErrors && err.validationErrors.length) {
+      err.validationErrors.forEach((element: { title: any; }) => {
+        details += '\n\t' + (element.title ? element.title : '');
+      });
+    }
+    return `${title}\n${details}`;
+  }
 
+  private getSchemaId(payload: SchemaInterface): string | undefined {
+    const schemaId: string = (payload as any).json('x-parser-schema-id');
 
-        json.$schema = DEFAULT_SCHEMA;
-        return json;
+    if (schemaId && schemaId.indexOf('anonymous-schema')) {
+      return undefined;
     }
 
-    private stripAsyncApiXKeywords(json: any): any {
-        if (json === undefined || json === null) {
-            return;
-        }
-        for (const [key, value] of Object.entries(json)) {
-            if (key === 'x-parser-spec-parsed' ||
-                key === 'x-parser-message-name' ||
-                key === 'x-parser-schema-id' ||
-                key === 'x-parser-circular' ||
-                key === 'x-parser-circular-props') {
-                delete json[key];
-            } else if (Array.isArray(value)) {
-                for (const val of value) {
-                    if (typeof val === 'object') {
-                        this.stripAsyncApiXKeywords(val);
-                    }
-                }
-            } else if (typeof value === 'object') {
-                this.stripAsyncApiXKeywords(value);
-            }
-        }
+    return schemaId;
+  }
+
+  private loadFile(uri: Uri, validationResults: ValidationResult[]): any {
+    if (uri.filename().endsWith('.proto')) {
+      try {
+        return this.fileResolver && ProtoReferenceJoiner.resolveProtoImport(
+          this.fileResolver(uri.filename()),
+          uri.filename(),
+          this.fileResolver,
+        );
+      } catch (e) {
+        validationResults.push({
+          item: '',
+          error: ((e instanceof Error) ? e.message : '' + e),
+          context: 'in proto file',
+        });
+        return {};
+      }
     }
 
-    private stripJsonschema2pojoKeywords(json: any): any {
-        if (json === undefined || json === null) {
-            return;
-        }
-        for (const [key, value] of Object.entries(json)) {
-            if (key === 'javaType' ||
-                key === 'existingJavaType' ||
-                key === 'javaEnumNames' ||
-                key === 'javaEnums' ||
-                key === 'javaJsonView' ||
-                key === 'javaName' ||
-                key === 'javaInterfaces' ||
-                key === 'customTimezone' ||
-                key === 'customDateTimePattern' ||
-                key === 'excludedFromEqualsAndHashCode') {
-                delete json[key];
-            } else if (Array.isArray(value)) {
-                for (const val of value) {
-                    if (typeof val === 'object') {
-                        this.stripJsonschema2pojoKeywords(val);
-                    }
-                }
-            } else if (typeof value === 'object') {
-                this.stripJsonschema2pojoKeywords(value);
-            }
-        }
-    }
+    return this.fileResolver && this.fileResolver(uri.filename());
+  }
 
-    private getSchemaId(payload: SchemaInterface): string | undefined {
-        const schemaId: string = (payload as any).json('x-parser-schema-id');
-
-        if (schemaId && schemaId.indexOf('anonymous-schema')) {
-            return undefined;
-        }
-
-        return schemaId;
-    }
+  resolveFile(fileResolver: (filename: string) => string) {
+    this.fileResolver = fileResolver;
+  }
 }
