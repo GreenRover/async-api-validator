@@ -82,11 +82,11 @@ export class ProtoReferenceJoiner {
 
           if (fileToIncludeContent) {
             output += this._resolveProtoImport(
-                fileToIncludeContent,
-                fileToInclude,
-                resolveFile,
-                meta,
-              ).trim() + '\n';
+              fileToIncludeContent,
+              fileToInclude,
+              resolveFile,
+              meta,
+            ).trim() + '\n';
           }
         }
 
@@ -116,7 +116,8 @@ export class ProtoReferenceJoiner {
    * Global libs are not contained in zip file. Skip them, visualization and code generators know how to handle them.
    */
   private static isGoogleProto(filename: string): boolean {
-    return filename.startsWith('google/type/') || filename.startsWith('google/protobuf/');
+    return filename.startsWith('google/type/') || filename.startsWith('google/protobuf/') ||
+      filename.startsWith('/google/type/') || filename.startsWith('/google/protobuf/');
   }
 }
 

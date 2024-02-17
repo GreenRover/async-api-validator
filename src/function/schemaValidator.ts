@@ -84,7 +84,6 @@ export class SchemaValidator {
   }
 
 
-
   private checkExamples(schema: SchemaInterface, title: string) {
     const results: ValidationResult[] = [];
 
@@ -239,12 +238,11 @@ export class SchemaValidator {
   }
 
 
-
   private normalizeSchema(json: any, schemaFormat: string | undefined): any {
-    this.stripAsyncApiXKeywords(json);
+    SchemaValidator.stripAsyncApiXKeywords(json);
 
     if (this.supportJsonschema2pojo) {
-      this.stripJsonschema2pojoKeywords(json); // https://www.jsonschema2pojo.org/
+      SchemaValidator.stripJsonschema2pojoKeywords(json); // https://www.jsonschema2pojo.org/
     }
 
     if (schemaFormat && schemaFormat.startsWith('application/vnd.aai.asyncapi')) {
@@ -271,16 +269,12 @@ export class SchemaValidator {
     }
   }
 
-  private stripAsyncApiXKeywords(json: any): any {
+  public static stripAsyncApiXKeywords(json: any): any {
     if (json === undefined || json === null) {
       return;
     }
     for (const [key, value] of Object.entries(json)) {
-      if (key === 'x-parser-spec-parsed' ||
-        key === 'x-parser-message-name' ||
-        key === 'x-parser-schema-id' ||
-        key === 'x-parser-circular' ||
-        key === 'x-parser-circular-props') {
+      if (key.startsWith('x-')) {
         delete json[key];
       } else if (Array.isArray(value)) {
         for (const val of value) {
@@ -292,9 +286,11 @@ export class SchemaValidator {
         this.stripAsyncApiXKeywords(value);
       }
     }
+
+    return json;
   }
 
-  private stripJsonschema2pojoKeywords(json: any): any {
+  public static stripJsonschema2pojoKeywords(json: any): any {
     if (json === undefined || json === null) {
       return;
     }
@@ -320,6 +316,30 @@ export class SchemaValidator {
         this.stripJsonschema2pojoKeywords(value);
       }
     }
+  }
+
+  public static revertSchemaParserEffects(json: any): any {
+    if (json === undefined || json === null) {
+      return;
+    }
+
+    if (json['x-parser-original-payload']) {
+      return json['x-parser-original-payload'];
+    }
+
+    for (const [key, value] of Object.entries(json)) {
+      if (Array.isArray(value)) {
+        for (let i = 0; i < value.length; i++) {
+          if (typeof key[i] === 'object') {
+            json[key][i] = this.stripJsonschema2pojoKeywords(key[i]);
+          }
+        }
+      } else if (typeof value === 'object') {
+        json[key] = this.stripJsonschema2pojoKeywords(value);
+      }
+    }
+
+    return json;
   }
 
 }

@@ -7,8 +7,7 @@ import { DiagnosticSeverity } from '@stoplight/types';
 import type Uri from 'urijs';
 
 import { ValidationResult } from '../controllers/validationResults';
-import { ProtoReferenceJoiner } from './ProtoReferenceJoiner';
-import { SchemaValidator } from './schemaValidator';
+import { SchemaValidator } from './SchemaValidator';
 
 export class AsyncApiValidator {
 
@@ -19,7 +18,7 @@ export class AsyncApiValidator {
   public checkHavingDescription = false;
 
 
-  public async validate(schema: string): Promise<ValidationResult[]> {
+  public async validate(schema: string): Promise<[AsyncAPIDocumentInterface | undefined, ValidationResult[]]> {
     const parserOptions: ParserOptions = {
       ruleset: {
         core: true,
@@ -38,7 +37,7 @@ export class AsyncApiValidator {
               schema: 'file',
               order: -1,
               canRead: true,
-              read: (uri: Uri, _ctx?: any) => this.loadFile(uri, results) as string,
+              read: (uri: Uri, _ctx?: any) => this.loadFile(uri) as string,
             },
           ],
         },
@@ -67,14 +66,14 @@ export class AsyncApiValidator {
         }
       }
     } catch (err) {
-      return [{
+      return [asyncApiDoc, [{
         item: 'asyncApi',
         error: this._formatError(err),
-      }];
+      }]];
     }
 
     if (asyncApiDoc == undefined) {
-      return results;
+      return [asyncApiDoc, results];
     }
 
     const schemaValidator = new SchemaValidator();
@@ -110,7 +109,7 @@ export class AsyncApiValidator {
       }
     }
 
-    return results;
+    return [asyncApiDoc, results];
   }
 
   private _formatError(err: any) {
@@ -135,24 +134,7 @@ export class AsyncApiValidator {
     return schemaId;
   }
 
-  private loadFile(uri: Uri, validationResults: ValidationResult[]): any {
-    if (uri.filename().endsWith('.proto')) {
-      try {
-        return this.fileResolver && ProtoReferenceJoiner.resolveProtoImport(
-          this.fileResolver(uri.filename()),
-          uri.filename(),
-          this.fileResolver,
-        );
-      } catch (e) {
-        validationResults.push({
-          item: '',
-          error: ((e instanceof Error) ? e.message : '' + e),
-          context: 'in proto file',
-        });
-        return {};
-      }
-    }
-
+  private loadFile(uri: Uri): any {
     return this.fileResolver && this.fileResolver(uri.filename());
   }
 
