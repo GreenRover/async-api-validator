@@ -143,7 +143,7 @@ export class AsyncApiController extends Controller {
     const resolved = resolveNonJsonRef(schemaToValidate, additionalFiles);
     const validator = createValidator(allowJsonschema2pojo, checkQuality, additionalFiles);
 
-    let [_doc, valResult] = await validator.validate(resolved.resolved);
+    const [_doc, valResult] = await validator.validate(resolved.resolved);
     valResult.push(...resolved.validationResults);
 
     this.setStatus(200);

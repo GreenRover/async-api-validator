@@ -3,7 +3,7 @@ import { ProtoMeta } from './ProtoMeta';
 const PROTO_IMPORT_PLACEHOLDER: string = '# imports placeholder #';
 
 function parentPath(filename: string): string {
-  let parts = filename.split('/');
+  const parts = filename.split('/');
   parts.pop();
   return parts.join('/');
 }
@@ -29,7 +29,7 @@ export class ProtoReferenceJoiner {
    * Replace "imports" in proto buf files
    */
   private static _resolveProtoImport(fileContent: string, filename: string, resolveFile: (flename: string) => string, meta: ProtoMeta): string {
-    const importPattern = /import "([.\w\-\/]+\.proto)";/;
+    const importPattern = /import "([.\w\-/]+\.proto)";/;
     const syntaxOrPackagePattern = /(syntax|package)\s+=?\s*"?([\w.-]+)"?;/i;
     const basePath = parentPath(filename);
     const lines = fileContent.split('\n');
