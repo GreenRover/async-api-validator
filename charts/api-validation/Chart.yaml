@@ -1,5 +1,0 @@
-apiVersion: v1
-name: api-validation-latest
-description: A Helm chart for the api-validation
-version: 1.5.2
-icon: http://acme.org/replaceme.jpg
