@@ -47,7 +47,7 @@ export class RefResolver {
         return resolveFile(parts[0]);
       }
 
-      return ref;
+      return null;
     });
 
     return {
@@ -63,11 +63,13 @@ export class RefResolver {
 
     if (json['$ref']) {
       const res = resolve(json['$ref']);
-      delete json['$ref'];
-      if (typeof res === 'object') {
-        return { ...json, ...res };
+      if (res) {
+        delete json['$ref'];
+        if (typeof res === 'object') {
+          return { ...json, ...res };
+        }
+        return res;
       }
-      return res;
     }
 
     for (const [key, value] of Object.entries(json)) {
