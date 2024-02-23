@@ -2,10 +2,27 @@ import { SchemaInterface } from '@asyncapi/parser';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { ValidationResult } from '../controllers/validationResults';
+import * as asyncApim200ExternalDocs from '../schemas/asyncapi_2.0.0_externalDocs.json';
 import * as asyncApim200Schema from '../schemas/asyncapi_2.0.0_schema.json';
+
+import * as asyncApim200SpecificationExtension from '../schemas/asyncapi_2.0.0_specificationExtension.json';
+import * as asyncApim240ExternalDocs from '../schemas/asyncapi_2.4.0_externalDocs.json';
 import * as asyncApim240Schema from '../schemas/asyncapi_2.4.0_schema.json';
+
+import * as asyncApim240SpecificationExtension from '../schemas/asyncapi_2.4.0_specificationExtension.json';
+import * as asyncApim260ExternalDocs from '../schemas/asyncapi_2.6.0_externalDocs.json';
 import * as asyncApim260Schema from '../schemas/asyncapi_2.6.0_schema.json';
+
+import * as asyncApim260SpecificationExtension from '../schemas/asyncapi_2.6.0_specificationExtension.json';
+import * as asyncApim300ExternalDocs from '../schemas/asyncapi_3.0.0_externalDocs.json';
+import * as asyncApim300MultifomatSchema from '../schemas/asyncapi_3.0.0_multiFormatSchema.json';
+import * as asyncApim300Reference from '../schemas/asyncapi_3.0.0_reference.json';
+import * as asyncApim300ReferenceObject from '../schemas/asyncapi_3.0.0_referenceObject.json';
+
 import * as asyncApim300Schema from '../schemas/asyncapi_3.0.0_schema.json';
+import * as asyncApim300SpecificationExtension from '../schemas/asyncapi_3.0.0_specificationExtension.json';
+import * as asyncApim300Avro from '../schemas/avroSchema_v1.json';
+import * as asyncApim300OpenApi from '../schemas/openapiSchema_3_0.json';
 
 export class SchemaValidator {
 
@@ -14,8 +31,8 @@ export class SchemaValidator {
   public checkHavingDescription = false;
   public asyncApiVersion: string = '2.6.0';
 
-  public constructor() {
-    this.ajv = new Ajv({
+  public ajv() {
+    const ajv = new Ajv({
       allErrors: true,
       strictNumbers: true,
       strictSchema: true,
@@ -24,19 +41,36 @@ export class SchemaValidator {
       allowUnionTypes: true,
     });
 
-    addFormats(this.ajv);
+    addFormats(ajv);
 
-    this.ajv.addSchema(asyncApim200Schema, 'http://asyncapi.com/definitions/2.0.0/schema.json');
-    this.ajv.addSchema(asyncApim240Schema, 'http://asyncapi.com/definitions/2.4.0/schema.json');
-    this.ajv.addSchema(asyncApim260Schema, 'http://asyncapi.com/definitions/2.6.0/schema.json');
-    this.ajv.addSchema(asyncApim300Schema, 'http://asyncapi.com/definitions/3.0.0/schema.json');
+    ajv.addSchema(asyncApim200SpecificationExtension, 'http://asyncapi.com/definitions/2.0.0/specificationExtension.json');
+    ajv.addSchema(asyncApim200ExternalDocs, 'http://asyncapi.com/definitions/2.0.0/externalDocs.json');
+    ajv.addSchema(asyncApim200Schema, 'http://asyncapi.com/definitions/2.0.0/schema.json');
+
+    ajv.addSchema(asyncApim240SpecificationExtension, 'http://asyncapi.com/definitions/2.4.0/specificationExtension.json');
+    ajv.addSchema(asyncApim240ExternalDocs, 'http://asyncapi.com/definitions/2.4.0/externalDocs.json');
+    ajv.addSchema(asyncApim240Schema, 'http://asyncapi.com/definitions/2.4.0/schema.json');
+
+    ajv.addSchema(asyncApim260SpecificationExtension, 'http://asyncapi.com/definitions/2.6.0/specificationExtension.json');
+    ajv.addSchema(asyncApim260ExternalDocs, 'http://asyncapi.com/definitions/2.6.0/externalDocs.json');
+    ajv.addSchema(asyncApim260Schema, 'http://asyncapi.com/definitions/2.6.0/schema.json');
+
+    ajv.addSchema(asyncApim300SpecificationExtension, 'http://asyncapi.com/definitions/3.0.0/specificationExtension.json');
+    ajv.addSchema(asyncApim300ReferenceObject, 'http://asyncapi.com/definitions/3.0.0/ReferenceObject.json');
+    ajv.addSchema(asyncApim300Reference, 'http://asyncapi.com/definitions/3.0.0/Reference.json');
+    ajv.addSchema(asyncApim300ExternalDocs, 'http://asyncapi.com/definitions/3.0.0/externalDocs.json');
+    ajv.addSchema(asyncApim300Schema, 'http://asyncapi.com/definitions/3.0.0/schema.json');
+    ajv.addSchema(asyncApim300MultifomatSchema, 'http://asyncapi.com/definitions/3.0.0/multiFormatSchema.json');
+
+    ajv.addSchema(asyncApim300OpenApi, 'http://asyncapi.com/definitions/3.0.0/openapiSchema_3_0.json');
+    ajv.addSchema(asyncApim300Avro, 'http://asyncapi.com/definitions/3.0.0/avroSchema_v1.json');
 
     // Add keywords for async api mixed ins.
-    this.ajv.addKeyword({
+    ajv.addKeyword({
       keyword: 'discriminator',
       type: 'string',
     });
-    this.ajv.addKeyword({
+    ajv.addKeyword({
       keyword: 'externalDocs',
       metaSchema: {
         type: 'object',
@@ -54,17 +88,16 @@ export class SchemaValidator {
         },
       },
     });
-  }
 
-  private readonly ajv: Ajv;
+    return ajv;
+  }
 
   public checkSchema(json: SchemaInterface, schemaFormat: string | undefined, title: string) {
     const results: ValidationResult[] = [];
 
+    const normalizeSchema = this.normalizeSchema(json.json(), schemaFormat);
     try {
-      this.ajv.compile(
-        this.normalizeSchema(json.json(), schemaFormat),
-      );
+      this.ajv().validateSchema(normalizeSchema);
 
       if (this.checkHavingExamples) {
         results.push(...this.checkExamples(json, title + ' '));
@@ -76,7 +109,7 @@ export class SchemaValidator {
       results.push({
         item: title,
         error: (e.title || e.message),
-        context: JSON.stringify(json.json(), null, 2),
+        context: JSON.stringify(normalizeSchema, null, 2),
       });
     }
 
@@ -152,8 +185,8 @@ export class SchemaValidator {
 
     return [
       {
-        item: item + '.example',
-        error: 'missing example',
+        item: item + '.examples',
+        error: 'missing examples',
         context: JSON.stringify(schema.json(), null, 2),
       },
     ];
@@ -259,7 +292,7 @@ export class SchemaValidator {
   private getSchemaByAsyncApiVersion(asyncApiVersion: string): string {
     const numericVersion = toNumericVersion(asyncApiVersion);
     if (numericVersion >= 30000) {
-      return 'http://asyncapi.com/definitions/3.0.0/schema.json';
+      return 'http://asyncapi.com/definitions/3.0.0/multiFormatSchema.json';
     } else if (numericVersion >= 20600) {
       return 'http://asyncapi.com/definitions/2.6.0/schema.json';
     } else if (numericVersion >= 20400) {

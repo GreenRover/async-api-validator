@@ -102,7 +102,7 @@ export class AsyncApiValidator {
         if (message.headers()) {
           results.push(...schemaValidator.checkSchema(
             message.headers() as SchemaInterface,
-            message.schemaFormat(),
+            undefined,
             'Schema of ' + (message.id() + ' message header'),
           ));
         }
