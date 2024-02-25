@@ -28,6 +28,11 @@
         "buildDockerImage": true,
         "sonarScan": {
           "enabled": false
+        },
+        "testreport": {
+          "enabled": true,
+          "artifactoryRepository": "tms.generic",
+          "resultsDir": "test-report"
         }
       },
       "tasks": [

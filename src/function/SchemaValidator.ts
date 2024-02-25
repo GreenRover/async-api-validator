@@ -39,6 +39,7 @@ export class SchemaValidator {
       validateSchema: true,
       removeAdditional: false,
       allowUnionTypes: true,
+      logger: false
     });
 
     addFormats(ajv);

@@ -1,0 +1,153 @@
+asyncapi: 3.0.0
+info:
+  title: masterdata_station_switch_state_api
+  version: 1.0.2-SNAPSHOT
+  license:
+    name: SBB TMS
+    url: https://data.sbb.ch/page/licence/
+  contact:
+    name: Team Orca
+    email: dl12350@sbb.ch
+  externalDocs:
+    description: RequestReply best practices
+    url: https://confluence.sbb.ch/x/Ohbleg
+defaultContentType: application/x-protobuf
+channels:
+  request:
+    address: tms/capaopt/masterdata/{stage}/v1/stationswitchstate/request
+    description: Request channel to get the Stationswitchstate
+    parameters:
+      stage:
+        $ref: '#/components/parameters/stage'
+    messages:
+      requestMessage:
+        $ref: '#/components/messages/requestMessage'
+  reply:
+    messages:
+      replyMessage:
+        $ref: '#/components/messages/replyMessage'
+  datachanged:
+    address: tms/capaopt/masterdata/{stage}/v1/stationswitchstate/datachanged
+    description: A notification that the station switch states have changed
+    parameters:
+      stage:
+        $ref: '#/components/parameters/stage'
+    messages:
+      datachangedMessage:
+        payload:
+          schemaFormat: application/vnd.google.protobuf;version=3
+          schema: |
+            /*
+             * Copyright © Schweizerische Bundesbahnen SBB, 2023.
+             */
+            syntax = "proto3";
+            package sbb.tms.capaopt.masterdata.stationswitchstate;
+
+
+
+            // A notification that the station switch states have changed
+            message StationSwitchStateChangedNotificationMsg {
+            }
+operations:
+  request:
+    action: send
+    channel:
+      $ref: '#/channels/request'
+    reply:
+      address:
+        description: >-
+          Reply is sent to topic specified in 'replyTo' property in the message
+          header
+        location: $message.header#/replyTo
+      channel:
+        $ref: '#/channels/reply'
+  publishDatachanged:
+    action: send
+    channel:
+      $ref: '#/channels/datachanged'
+components:
+  messages:
+    requestMessage:
+      headers:
+        type: object
+        properties:
+          replyTo:
+            type: string
+            description: Provide path to which reply must be provided
+          requestId:
+            type: string
+            format: uuid
+            description: Provide request id that you will use to identify the reply match
+            examples:
+              - 123e4567-e89b-12d3-a456-426614174000
+      payload:
+        schemaFormat: application/vnd.google.protobuf;version=3
+        schema: |+
+          /*
+           * Copyright © Schweizerische Bundesbahnen SBB, 2023.
+           */
+          syntax = "proto3";
+
+          package sbb.tms.capaopt.masterdata.stationswitchstate;
+
+
+
+          // Request to get all the Station Switch States
+          message StationSwitchStatesRequest {
+          }
+
+      correlationId:
+        $ref: '#/components/correlationIds/correlationId'
+    replyMessage:
+      headers:
+        type: object
+        properties:
+          requestId:
+            type: string
+            format: uuid
+            description: Reply message must contain id of the request message
+            examples:
+              - 123e4567-e89b-12d3-a456-426614174000
+      payload:
+        schemaFormat: application/vnd.google.protobuf;version=3
+        schema: |
+          /*
+           * Copyright © Schweizerische Bundesbahnen SBB, 2023.
+           */
+          syntax = "proto3";
+
+          package sbb.tms.capaopt.masterdata.stationswitchstate;
+
+
+
+          //A Station Switch State
+          message StationSwitchStateMsg {
+              // the station
+              // @Example HUE
+              // @Example BN
+              string station = 1;
+              // true if the timehorizon 1 is enabled
+              // @Example true
+              // @Example false
+              bool vh1_enabled = 2;
+              //
+              // true if the station is enabled
+              // @Example true
+              // @Example false
+              bool station_enabled = 3;
+          }
+      correlationId:
+        $ref: '#/components/correlationIds/correlationId'
+  correlationIds:
+    correlationId:
+      location: $message.header#/requestId
+  parameters:
+    stage:
+      description: >-
+        The environment stage. Can be any of (d)evelopment, (p)roduction,
+        (t)est, (i)ntegration
+      enum:
+        - d
+        - p
+        - t
+        - i
