@@ -43,6 +43,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "npm run clean && npm run lint && npm run tsoa && npm run test && npm run tsc",
+    "build:fast": "npm run clean && npm run tsoa && npm run tsc",
     "tsoa": "tsoa spec-and-routes",
     "tsc": "tsc",
     "start:dev": "npm run tsoa && npm run watch:dev",
