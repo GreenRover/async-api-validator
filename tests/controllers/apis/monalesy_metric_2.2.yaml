@@ -1,0 +1,260 @@
+asyncapi: 2.2.0
+info:
+  title: Monalesy Metric
+  version: 1.7.0
+  description: "Monalesy is the TMS monitoring stack.\nIt is based on Prometheus as\
+    \ APM.\nThere is the subapi providing push metrics out of your application to\
+    \ be received by\na foreign application to estimate you data quality \nor the\
+    \ montioring system to run rules or provides charts on your kpi.\n\n## Purpose\n\
+    \nThe purposes of this api are the following:\n* enable a customer application\
+    \ to provide prometheus metrics via solace\n* provide standard meters from libraries\
+    \ such as spring\n* provide meters manually defined within application counters\
+    \ / gauges\n* fast access with only changed meters\n* state-less design with keyframing\n\
+    * low resource usage due to keyframing and updates only on changed meters\n\n\
+    ## Non-functionals\n\nCommunication is provided through teams channel TMS_PROD\
+    \ (and on int TMS_TEST)\n\n## Target customers\n\nApplications that intend to\
+    \ send their monitoring metrics via solace instead of being scraped,\ni.e. to\
+    \ simplify firewall issues.\n\n## Availbility\n\nWe provide only best effort for\
+    \ this functionality, however on prod api the pods are under high availability\
+    \ cluster and\nyou have very low downtime.\n\nThe api and the service have the\
+    \ following conditions:\n\n* Service availability: best effort\n* Support: 9:00\
+    \ - 17:00 CET\n\n## Additional information\n\nPlease note that the email link\
+    \ on the right panel is not intended for us.\n\nIf you have an urgent question\
+    \ contact us via: ironman@sbb.ch."
+  license:
+    name: SBB TMS
+    url: https://www.sbb.ch
+  contact:
+    name: Systemteam TRS
+    url: https://confluence.sbb.ch/x/X4XZa
+    email: ironman@sbb.ch
+defaultContentType: application/json
+channels:
+  tms/monitoring/monalesy/*/v1/metric/incremental/{abb1}/{abb2}/{abb3}/{stage}/{app_specific_metric_group}:
+    description: |
+      KPI/Metrics Channel for each application. Other applications can listen to the metrics to react to the QoS of the applications.
+    parameters:
+      abb1:
+        $ref: '#/components/parameters/abb1'
+      abb2:
+        $ref: '#/components/parameters/abb2'
+      abb3:
+        $ref: '#/components/parameters/abb3'
+      stage:
+        $ref: '#/components/parameters/stage'
+      app_specific_metric_group:
+        $ref: '#/components/parameters/app_specific_metric_group'
+    publish:
+      traits:
+        - $ref: '#/components/operationTraits/solace'
+      message:
+        $ref: '#/components/messages/MetricIncremental'
+  tms/monitoring/monalesy/*/v1/metric/keyframe/{abb1}/{abb2}/{abb3}/{stage}/{app_specific_metric_group}:
+    description: |
+      KPI/Metrics Channel for each application. Other applications can listen to the metrics to react to the QoS of the applications.
+    parameters:
+      abb1:
+        $ref: '#/components/parameters/abb1'
+      abb2:
+        $ref: '#/components/parameters/abb2'
+      abb3:
+        $ref: '#/components/parameters/abb3'
+      stage:
+        $ref: '#/components/parameters/stage'
+      app_specific_metric_group:
+        $ref: '#/components/parameters/app_specific_metric_group'
+    publish:
+      traits:
+        - $ref: '#/components/operationTraits/solace'
+      message:
+        $ref: '#/components/messages/MetricKeyframe'
+components:
+  messages:
+    MetricIncremental:
+      description: "KPI/Metrics of the application, to let the customer assess the\
+        \ quality of the data.\n\nShould only be retransmitted if a value changed.\n\
+        Should not contain meta data to keep messages small.\nShould be triggered\
+        \ by value changes, but should be debounced for a small time interval to avoid\
+        \ message flooding. \n[Sample of debouncing](https://rxjs.dev/api/operators/bufferTime)\n"
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/MetricIncremental'
+      payload:
+        type: array
+        items:
+          $ref: '#/components/schemas/MetricIncremental'
+    MetricKeyframe:
+      description: "KPI/Metrics of the application, to let the customer assess the\
+        \ quality of the data.\n\nContains all values and has to contain the meta\
+        \ data.\nA good keyframe interval shoudl be between 5 and 15min \nbut should\
+        \ start at a random point in time to avoid message peaks created by simultaneous\
+        \ keyframes.\n"
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/MetricKeyframe'
+      payload:
+        type: array
+        items:
+          $ref: '#/components/schemas/MetricKeyframe'
+  schemas:
+    MetricIncremental:
+      type: object
+      required:
+        - key
+        - value
+      properties:
+        key:
+          type: string
+          pattern: "^[a-zA-Z_:][a-zA-Z0-9_:]*$"
+          examples:
+            - jvm_memory_committed_bytes
+          description: "Unique key to identify metric OpenMetrics specification for\
+            \ key names: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#metricfamily"
+        value:
+          anyOf:
+            - type: number
+              examples:
+                - "6029312.0"
+              description: Current value for this metric
+            - type: "null"
+        label:
+          type: object
+          additionalProperties:
+            type: string
+            properties:
+              code:
+                type: string
+                pattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
+              text:
+                type: string
+          examples:
+            - area: heap
+            - id: G1 Eden Space
+          description: "Optional labels to define key more specific. OpenMetrics specification\
+            \ for label: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#label"
+      description: Definition of single metric and value.
+    MetricKeyframe:
+      allOf:
+        - $ref: '#/components/schemas/MetricIncremental'
+        - type: object
+          properties:
+            meta:
+              type: object
+              additionalProperties: {}
+              properties:
+                HELP:
+                  type: string
+                  description: Short text as description to describe this metric.
+                  examples:
+                    - The uptime of the Java virtual machine
+                UNIT:
+                  type: string
+                  pattern: "^[a-z]+$"
+                  description: |
+                    Unit to describe metric.
+                    One base unit should be prefered.
+                    To to get benefits out of grafana auto unit assignment.
+                    But if this is not possible, use what ever as unit you want to.
+                    OpenMetrics base unit:
+                    url: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#units-and-base-units
+                  examples:
+                    - seconds
+                TYPE:
+                  type: string
+                  enum:
+                    - counter
+                    - gauge
+                    - histogram
+                    - summary
+                  description: |
+                    Type description of metric.
+                    OpenMetrics specification for type:
+                    https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#type
+                  examples:
+                    - gauge
+                TTL:
+                  type: integer
+                  description: |
+                    Time to live of metric in seconds. Used only if metrics have a shorter lifetime than the keyframe.
+                    If value is bigger than the key frame interval, the keyframe value will be used
+                    Default: Keyframing intervall.
+                  examples:
+                    - "30"
+              description: |
+                Meta data describing metrics, will be used in charts and for human readable output.
+                only used while keyframing.
+                OpenMetrics specification for meta:
+                https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#metricfamily
+      description: Definition of single metric and value.
+  messageTraits:
+    MetricIncremental:
+      headers:
+        type: object
+        description: List of general header fields
+        required:
+          - sender_ident
+        properties:
+          sender_ident:
+            type: string
+            pattern: "^[\\w\\.\\-]{8,120}$"
+            description: Use a world unique identifier for your application instance.
+              Like a random UUID or abb1.abb2.abb3.hostname.pid.
+            examples:
+              - tms.rcs.rcsd.rcsecho1.15467
+    MetricKeyframe:
+      headers:
+        allOf:
+          - $ref: '#/components/messageTraits/MetricIncremental/headers'
+          - type: object
+            description: Keyframe specific headers
+            required:
+              - next_keyframe
+            properties:
+              next_keyframe:
+                type: number
+                description: "Unix timestamp (milli seconds), publishing when the next\
+                \ keyframe is expected"
+                examples:
+                  - "1617260400000"
+  operationTraits:
+    solace:
+      bindings:
+        solace:
+          clientId: monalesy-prometheus-service-description-consumer
+  parameters:
+    abb1:
+      schema:
+        description: Application building block level 1 of your application.
+        type: string
+        examples:
+          - tms
+    abb2:
+      schema:
+        description: Application building block level 2 of your application.
+        type: string
+        examples:
+          - rcs
+    abb3:
+      schema:
+        description: Application building block level 3 of your application.
+        type: string
+        examples:
+          - rcsd
+    stage:
+      schema:
+        description: The stage of your application.
+        type: string
+        examples:
+          - DEV-rcsecho
+    app_specific_metric_group:
+      schema:
+        description: |
+          This is a totaly free suffix for your.
+          But meantion, for each suffix you have to send a separate key frame.
+          You may use this feature to provide:
+          - Metrics in with different key frame intervals
+          - Metrics for different receiver groups like monitoing or foreignt aps
+        type: string
+        pattern: "^[\\w\\.\\-\\/]+$"
+        examples:
+          - betriebslage

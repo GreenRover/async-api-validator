@@ -181,13 +181,15 @@ export class AsyncApiController extends Controller {
     if (resolved.resolved) {
       this.setStatus(200);
 
+      const payload = yaml.dump(resolved.resolved, {
+        noRefs: true,
+      });
+
       const response = (req as any).res as any;
       response
         .set(`Content-Type`, 'text/yaml')
-        .send(yaml.dump(resolved.resolved, {
-          noRefs: true,
-        }));
-      return '';
+        .send(payload); // for real application
+      return payload; // for test
     }
 
 

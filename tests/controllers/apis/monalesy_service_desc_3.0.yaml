@@ -1,0 +1,1053 @@
+asyncapi: "3.0.0"
+info:
+  title: "Monalesy Service Description"
+  version: "1.13.1"
+  description: "Monalesy is the TMS monitoring stack.\nIt is based on Prometheus as\
+    \ APM.\nThe main goal is a loose coupling of monitoring and the application to\
+    \ be monitored.\nFor this the service description is owned by the application\
+    \ and has to be published via mom.\nThere is only a read only gui provided.\n\n\
+    Note: You need to provide a microservice that makes your service description available\
+    \ all the time,\notherwise a stateless monitoring stack is not possible. The service\
+    \ description provider pod is supposed to\nrespond to a request giving the service\
+    \ description any time, so you cant just start this pod and stop it later on to\
+    \ reduce resource usage.\n\n## Purpose\n\nThe purposes of this api are the following:\n\
+    * providing the service description containing:\n    * define scrape endpoints\
+    \ so prometheus knows where and how often it should scrape its metrics\n    *\
+    \ define monitoring rules for alerts based on metrics, those rules will be checked\
+    \ by prometheus\n    * define grafana dashboards i.e. to visualize the timeline\
+    \ of metrics\n    * categorize alerts so they can be fitted into a service tree,\
+    \ visualizing the alerts application part\n    * provide request topics, in order\
+    \ to have monitoring stacks stateless\n* provide a service state containing:\n\
+    \    * to indentify if a specific instance is active, i.e. on active and passive\
+    \ mode\n    * to define how log entries should be processed and be forward as\
+    \ alerts, depending on passive or active mode\n    * create hopefully readable\
+    \ summary and other labels / annotations out of the log message via regex\n\n\
+    ## Non-functional\n\nCommunication is provided through teams channel TMS_PROD\
+    \ (and on int TMS_TEST)\n\n## Target customers\n\nOn one side customers are the\
+    \ applications that like to provide monitoring infos.\nOn the other side the receiver\
+    \ parts i.e. grafana and prometheus instances and following services i.e. iMON.\n\
+    \n## Availability\n\nWe provide only best effort for this functionality, however\
+    \ on prod api the pods are under high availability cluster and\nyou have very\
+    \ low downtime.\n\nThe api and the service have the following conditions:\n\n\
+    * Service availability: best effort\n* Support: 9:00 - 17:00 CET\n\n## Additional\
+    \ information\n\nPlease note that the email link on the right panel is not intended\
+    \ for us.\n\nIf you have an urgent question contact us via: ironman@sbb.ch."
+  license:
+    name: "SBB TMS"
+    url: "https://www.sbb.ch"
+  contact:
+    name: "System team TRS"
+    url: "https://confluence.sbb.ch/x/X4XZa"
+    email: "ironman@sbb.ch"
+defaultContentType: "application/json"
+channels:
+  response:
+    address: null
+    description: "Special channel to be sued for response messages. The `address`will\
+      \ be taken from the `replyTo` header."
+    messages:
+      response:
+        $ref: "#/components/messages/ResponseControlMessage"
+  servicedesc-request-global:
+    address: "tms/monitoring/monalesy/p/v1/serviceDesc/request"
+    description: "Each ServiceDescriptionConsumer can request your service description.\n\
+      For example if it has crashed and is restarting.\nIt is a requirement as a producer\
+      \ to listen and respond to this topic (depending on the filters).\nThe global\
+      \ topic will be used if the consumer is not sure what it is responsible for.\n"
+    messages:
+      request:
+        $ref: "#/components/messages/RequestControlMessage"
+  servicedesc-request-one:
+    address: "tms/monitoring/monalesy/p/v1/serviceDesc/request/{abb1}/{abb2}/{abb3}/{stage}"
+    description: "Each ServiceDescriptionConsumer can request your service description.\n\
+      For example if it has crashed and is restarting.\nIt is a requirement as a producer\
+      \ to listen and respond to this topic (depending on the filters).\n"
+    parameters:
+      abb1:
+        $ref: "#/components/parameters/abb1"
+      abb2:
+        $ref: "#/components/parameters/abb2"
+      abb3:
+        $ref: "#/components/parameters/abb3"
+      stage:
+        $ref: "#/components/parameters/stage"
+    messages:
+      request:
+        $ref: "#/components/messages/RequestControlMessage"
+  servicedesc-startup:
+    address: "tms/monitoring/monalesy/p/v1/serviceDesc/startup/{abb1}/{abb2}/{abb3}/{stage}"
+    description: "When the application is deployed and starts up, the Service Description\
+      \ has to be sent on this topic."
+    parameters:
+      abb1:
+        $ref: "#/components/parameters/abb1"
+      abb2:
+        $ref: "#/components/parameters/abb2"
+      abb3:
+        $ref: "#/components/parameters/abb3"
+      stage:
+        $ref: "#/components/parameters/stage"
+    messages:
+      startup:
+        $ref: "#/components/messages/ServiceDescription"
+  servicedesc-update:
+    address: "tms/monitoring/monalesy/p/v1/serviceDesc/update/{abb1}/{abb2}/{abb3}/{stage}"
+    description: "A ServiceDescription is valid up to: 12h\nYou should resend your\
+      \ Service Description regularly (all 3 hour) on this topic.\n"
+    parameters:
+      abb1:
+        $ref: "#/components/parameters/abb1"
+      abb2:
+        $ref: "#/components/parameters/abb2"
+      abb3:
+        $ref: "#/components/parameters/abb3"
+      stage:
+        $ref: "#/components/parameters/stage"
+    messages:
+      update:
+        $ref: "#/components/messages/ServiceDescription"
+  servicestate-request-global:
+    address: "tms/monitoring/monalesy/p/v1/serviceState/request"
+    description: "Each ServiceDescriptionConsumer can request your service description.\n\
+      For example if it has crashed and is restarting.\nIt is a requirement as a producer\
+      \ to listen and respond to this topic (depending on the filters).\nThe global\
+      \ topic will be used if the consumer is not sure what it is responsible for.\n"
+    messages:
+      request:
+        $ref: "#/components/messages/RequestControlMessage"
+  servicestate-startup:
+    address: "tms/monitoring/monalesy/p/v1/serviceState/startup/{abb1}/{abb2}/{abb3}/{stage}"
+    description: "When the application is deployed and starts up, the Service Description\
+      \ has to be sent on this topic."
+    parameters:
+      abb1:
+        $ref: "#/components/parameters/abb1"
+      abb2:
+        $ref: "#/components/parameters/abb2"
+      abb3:
+        $ref: "#/components/parameters/abb3"
+      stage:
+        $ref: "#/components/parameters/stage"
+    messages:
+      startup:
+        $ref: "#/components/messages/ServiceState"
+  servicestate-update:
+    address: "tms/monitoring/monalesy/p/v1/serviceState/update/{abb1}/{abb2}/{abb3}/{stage}"
+    description: "A ServiceDescription is valid up to: 12h\nYou should resend your\
+      \ Service Description regularly (all 3 hour) on this topic.\n"
+    parameters:
+      abb1:
+        $ref: "#/components/parameters/abb1"
+      abb2:
+        $ref: "#/components/parameters/abb2"
+      abb3:
+        $ref: "#/components/parameters/abb3"
+      stage:
+        $ref: "#/components/parameters/stage"
+    messages:
+      update:
+        $ref: "#/components/messages/ServiceState"
+operations:
+  serviceDescRequestGlobal:
+    action: "receive"
+    title: "ServiceDescription: global request\n"
+    description: "Each ServiceDescriptionConsumer can request your service description.\n\
+      For example if it has crashed and is restarting.\nIt is a requirement as a producer\
+      \ to listen and respond to this topic (depending on the filters).\nThe global\
+      \ topic will be used if the consumer is not sure what it is responsible for.\n"
+    channel:
+      $ref: "#/channels/servicedesc-request-global"
+    reply:
+      channel:
+        $ref: "#/channels/response"
+      address:
+        location: "$message.header#/replyTo"
+  serviceDescRequestOne:
+    action: "receive"
+    title: "ServiceDescription: request to known target\n"
+    description: "Each ServiceDescriptionConsumer can request your service description.\n\
+      For example if it has crashed and is restarting.\nIt is a requirement as a producer\
+      \ to listen and respond to this topic (depending on the filters).\nExactly one\
+      \ response is expected.\n"
+    channel:
+      $ref: "#/channels/servicedesc-request-one"
+    reply:
+      channel:
+        $ref: "#/channels/response"
+      address:
+        location: "$message.header#/replyTo"
+  serviceDescStartup:
+    action: "send"
+    title: "ServiceDescription: startup\n"
+    description: "When the application is deployed and starts up, the Service Description\
+      \ has to be sent on this topic.\n"
+    channel:
+      $ref: "#/channels/servicedesc-startup"
+    reply:
+      channel:
+        $ref: "#/channels/response"
+      address:
+        location: "$message.header#/replyTo"
+  serviceDescUpdate:
+    action: "send"
+    title: "ServiceDescription: update\n"
+    description: "A ServiceDescription is valid up to: 12h\nYou should resend your\
+      \ Service Description regularly (all 3 hour) on this topic.\n"
+    channel:
+      $ref: "#/channels/servicedesc-update"
+    reply:
+      channel:
+        $ref: "#/channels/response"
+      address:
+        location: "$message.header#/replyTo"
+  serviceStateRequestGlobal:
+    action: "receive"
+    title: "ServiceState: global request\n"
+    description: "Each ServiceDescriptionConsumer can request your service state.\n\
+      For example if it has crashed and is restarting.\nIt is a requirement as a producer\
+      \ to listen and respond to this topic (depending on the filters).\nThe global\
+      \ topic will be used if the consumer is not sure what it is responsible for.\n"
+    channel:
+      $ref: "#/channels/servicedesc-request-global"
+    reply:
+      channel:
+        $ref: "#/channels/response"
+      address:
+        location: "$message.header#/replyTo"
+  serviceStateRequestOne:
+    action: "receive"
+    title: "ServiceDescription: request to known target\n"
+    description: "Each ServiceStateConsumer can request your service state.\nFor example\
+      \ if it has crashed and is restarting.\nIt is a requirement as a producer to\
+      \ listen and respond to this topic (depending on the filters).\nExactly one\
+      \ response is expected.\n"
+    channel:
+      $ref: "#/channels/servicedesc-request-one"
+    reply:
+      channel:
+        $ref: "#/channels/response"
+      address:
+        location: "$message.header#/replyTo"
+  serviceStateStartup:
+    action: "send"
+    title: "ServiceState: startup\n"
+    description: "When the application is deployed and starts up, the Service State\
+      \ has to be sent on this topic.\n"
+    channel:
+      $ref: "#/channels/servicedesc-startup"
+    reply:
+      channel:
+        $ref: "#/channels/response"
+      address:
+        location: "$message.header#/replyTo"
+  serviceStateUpdate:
+    action: "send"
+    title: "ServiceState: update\n"
+    description: "A ServiceState is valid up to: 12h\nYou should resend your Service\
+      \ State regularly (all 3 hour) on this topic.\n"
+    channel:
+      $ref: "#/channels/servicedesc-update"
+    reply:
+      channel:
+        $ref: "#/channels/response"
+      address:
+        location: "$message.header#/replyTo"
+components:
+  messages:
+    RequestControlMessage:
+      description: "The ServiceDescription|ServiceState consumer is allowed to request\
+        \ a service description at any time.\nThe ServiceDescription/ServiceState\
+        \ has to be provided in the provided ReplyTo topic\n"
+      contentType: "application/json"
+      traits:
+        - $ref: "#/components/messageTraits/replyHeadersRemoteFixed"
+      payload:
+        $ref: "#/components/schemas/RequestControlMessage"
+    ResponseControlMessage:
+      description: "Every time a ServiceDescription|ServiceState is submitted, it\
+        \ results in N > 1 responses.\nThe response include  information if the sent\
+        \ ServiceDescription|ServiceState was valid and was processed successfully.\n"
+      contentType: "application/json"
+      payload:
+        $ref: "#/components/schemas/ResponseControlMessage"
+    ServiceDescription:
+      description: "The ServiceDescription root object.\nYou can optionally add the\
+        \ replyTo header if processing status need to be sent to a specific address.\n\
+        It is recommended to at least log these responses.\nFurther information's\
+        \ to message flow.:\nhttps://confluence.sbb.ch/x/gIvgUg\n"
+      contentType: "application/json"
+      traits:
+        - $ref: "#/components/messageTraits/replyHeadersLocalOptional"
+      payload:
+        $ref: "#/components/schemas/ServiceDescription"
+    ServiceState:
+      description: "The ServiceState root object.\nYou can optionally add the replyTo\
+        \ header if processing status need to be sent to a specific address.\nIt is\
+        \ recommended to at least log these responses.\nFurther information's to message\
+        \ flow:\nhttps://confluence.sbb.ch/x/no3gUg\n"
+      contentType: "application/json"
+      traits:
+        - $ref: "#/components/messageTraits/replyHeadersLocalOptional"
+      payload:
+        $ref: "#/components/schemas/ServiceState"
+  schemas:
+    RequestControlMessage:
+      allOf:
+        - $ref: "#/components/schemas/AbstractControlMessage"
+        - type: "object"
+          properties:
+            type:
+              type: "string"
+              enum:
+                - "REQUEST"
+              default: "REQUEST"
+    ResponseControlMessage:
+      allOf:
+        - $ref: "#/components/schemas/AbstractControlMessage"
+        - type: "object"
+          properties:
+            type:
+              type: "string"
+              enum:
+                - "REQUEST"
+              default: "RESPONSE"
+    AbstractControlMessage:
+      type: "object"
+      additionalProperties: {}
+      required:
+        - "type"
+        - "statusCode"
+        - "message"
+      properties:
+        origin:
+          type: "string"
+          description: "human-readable name of the sender system.\njust for logging\n"
+        statusCode:
+          type: "integer"
+          examples:
+            - 500
+          description: "http status codes"
+        message:
+          type: "string"
+          examples:
+            - "Exception: the field monitoringRules[FPLWE].alert is missing but required."
+          description: "The human-readable error message"
+        receiverFilter:
+          type: "array"
+          items:
+            type: "string"
+          examples:
+            - "tms/rcs/int*/*"
+            - "tms/rcs/dev*/*"
+            - "tms/pas/kapparoute/*"
+          description: "A list of \"responsible\" for expressions. Here we use SMF\
+            \ wildcards.\nWill be set from ServiceDescription and ServiceState\nAll\
+            \ ServiceDescription|ServiceState provider needs to process this list\
+            \ and respond only if their topics are in at least 1 filter."
+    ServiceIdent:
+      type: "object"
+      required:
+        - "app"
+        - "stage"
+        - "instance"
+      additionalProperties: {}
+      properties:
+        app:
+          type: "string"
+          pattern: "^[\\w\\._\\-]{3,512}$"
+          examples:
+            - "tms.pas.capparoute"
+          description: "Name of the application.\nIn format: AbbL1.AbbL2.AbbL3\n\n\
+            This identify the application.\n\nFor example at the iMon service tree\
+            \ you have first to select your application, followed by a second selection\
+            \ of the stage.\n"
+        appVersion:
+          type: "string"
+          examples:
+            - "v1"
+          description: "The major version of the service description. This is also\
+            \ part of the topic structure."
+        stage:
+          type: "string"
+          pattern: "^[\\w\\._\\-]{3,512}$"
+          examples:
+            - "INT-charlie"
+          description: "Applications may be deployed on multiple stages.\nA Prefix:\
+            \ DEV (d), INT (i), PROD (p).\nFollowed by an optional minus and a suffix.\n"
+        instance:
+          type: "string"
+          pattern: "^[\\w\\._\\-]{3,1024}$"
+          examples:
+            - "aktiv"
+          description: "This field is required in case the application has a hot standby\
+            \ configuration.\nOtherwise use \"default\".\n\nIn case you have a hot\
+            \ standby configuration you also will need the \"ServiceState\" part,\n\
+            to provide the state of your instance. Each \"app\" + \"stage\" combination,\
+            \ belong together as a group and get a \"state\" label via \"ServiceState\"\
+            \nNormally you use a cluster name for the field \"instance\".\n\nExample:\n\
+            \  app: sbb.rcs.rcsd\n  stage: PROD\n  instance: IRCS\n  state: active\
+            \  -> via ServiceState\n\n  app: sbb.rcs.rcsd\n  stage: PROD\n  instance:\
+            \ PRCS\n  state: passive  -> via ServiceState\n"
+    ServiceDescription:
+      allOf:
+        - $ref: "#/components/schemas/ServiceIdent"
+        - type: "object"
+          required:
+            - "app"
+            - "stage"
+            - "instance"
+          additionalProperties: {}
+          properties:
+            kpi:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/ServiceDescriptionKpi"
+            service_group:
+              type: "object"
+              additionalProperties:
+                $ref: "#/components/schemas/ServiceDescriptionServiceGroup"
+            services:
+              type: "object"
+              additionalProperties:
+                $ref: "#/components/schemas/ServiceDescriptionService"
+            monitoring_rules:
+              type: "object"
+              additionalProperties:
+                $ref: "#/components/schemas/ServiceDescriptionMonitoring"
+              description: "List of rules to monitor your services.\nThis is a dictionary\
+              \ because each rule has to be unique.\n\n# key\nPattern: [\\w\\-]{3,256}\n\
+              The key is the rule group name.\nThe rule group name is used to group\
+              \ the rules in prometheus. At later stages like iMon this is not used\
+              \ any more.\n"
+              examples:
+                - "ImportCheckTaxi:\n  alertingRules:\n    FPLWD:\n      expr: DB_IMPORT_ANZ_TAXI_DATA{app=\"\
+              ${app}\",instance=\"${instance}\"} < 11000 AND day_of_week() != 0 AND\
+              \ day_of_week() != 6\n      alert: Fahrplandaten in RCS-D sind nicht\
+              \ aktuell, sie wurden nicht oder nur teilweise aus TAXI (NeTS) importiert\n\
+              \      for: 1m\n      labels:\n        severity: AlertHigh\n      annotations:\n\
+              \        description: some description of this alert\n        solving:\
+              \ manual how to solve this alert\n    FPLWE:\n      expr: DB_IMPORT_ANZ_TAXI_DATA{app=\"\
+              ${app}\",instance=\"${instance}\"} < 8500 AND (day_of_week() == 0 OR\
+              \ day_of_week() == 6)\n      alert: Fahrplandaten in RCS-D sind nicht\
+              \ aktuell, sie wurden nicht oder nur teilweise aus TAXI (NeTS) importiert\n\
+              \      for: 1m\n      labels:\n        severity: AlertHigh\n      annotations:\n\
+              \        description: |-\n          Die Fahrplandaten in der RCS-D Datenbank\
+              \ sind nicht aktuell, sie wurden nicht oder nur teilweise aus TAXI (NETs)\
+              \ importiert.\n\n          Diese Rule ist am Wochenende aktiv.\n   \
+              \     solving: Prüfen, ob der Prozess TaxiProzessor ordnungsgemäss lä\
+              uft\n"
+                - "FOSMon:\n  alertingRules:\n    RSR:\n      expr: delta(FOS_PROCESSOR_BESTELLER_RESEND_COUNT{app=\"\
+              ${app}\",instance=\"${instance}\"}[1m]) > 0.5\n      alert: LoadRequests\
+              \ are not completely anwered within the defined ResponseTime.\n    \
+              \  for: 1m\n      labels:\n        severity: AlertMedium\n"
+            prometheus_exporter:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/ServiceDescriptionExporter"
+            grafana_dashboards:
+              type: "object"
+              additionalProperties:
+                type: "string"
+              description: "This is a dictionary.\nThe key is the system identification\
+              \ of the dashboard.\nThe value is the base64 encoded dashboard json.\n\
+              \nThis enables you to create a dashboard manually and just export the\
+              \ json:\n  https://grafana.com/docs/grafana/latest/reference/export_import/\n\
+              \nThere will be no modification to the dashboards.\nIn case of multi\
+              \ environment (as it normal is).\nYou are responsible to:\n  - Generate\
+              \ a unique \"title\"\n  - Generate a unique \"uid\"\n  - NOT provide\
+              \ the \"id\" field\n  - Use \"datasource\": \"Thanos\"\n\nEncode the\
+              \ json with base64:\n  https://www.base64encode.org/\n  Enable: Split\
+              \ lines into 76 chars\n"
+              examples:
+                - "diy_tma_stabi: someBase64EncodedJsonFile"
+                - "rcs_performance: someBase64EncodedJsonFile"
+    ServiceDescriptionMonitoring:
+      type: "object"
+      required:
+        - "alertingRules"
+      properties:
+        alertingRules:
+          type: "object"
+          additionalProperties:
+            $ref: "#/components/schemas/ServiceDescriptionMonitoringAlertingRule"
+          description: "Alerting rules allow you to define alert conditions based\
+            \ on Prometheus expression language\nand to send notifications about firing\
+            \ alert.\nhttps://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/\n"
+        recordingRules:
+          type: "object"
+          additionalProperties:
+            $ref: "#/components/schemas/ServiceDescriptionMonitoringRecordingRule"
+          description: "Recurring rules use kpi and a calculation formula in PromQl\
+            \ syntax to calculate a new kpi.\nIn some cases an alerting rule is too\
+            \ complex, use recording rule.\nhttps://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#recording-rules\n"
+      description: "Rules to monitor your KPI, and throw alerts."
+    ServiceDescriptionMonitoringAlertingRule:
+      type: "object"
+      additionalProperties: {}
+      required:
+        - "expr"
+        - "alert"
+        - "forDuration"
+      properties:
+        expr:
+          type: "string"
+          examples:
+            - "DB_IMPORT_CIS_DATA_TIME{app=\\\"${app}\\\",instance=\\\"${instance}\\\
+            \"} > 7200 <= 14400 AND day_of_week() != 0 AND day_of_week() != 6"
+          description: "Prometheus provides a functional query language called PromQL\
+            \ (Prometheus Query Language) that lets the user select and aggregate\
+            \ time series data.\nThis enables you to create rules to your kpi.\n\n\
+            As all KPIs will be aggregated in a shared monitoring environment, it\
+            \ is strongly advised to add filter:\n- app=\\\"${app}\\\",instance=\\\
+            \"${instance}\\\"\nTo ensure that errors from the dev environment are\
+            \ not creating false positives on prod (or vice versa).\nhttps://prometheus.io/docs/prometheus/latest/querying/basics/\n"
+        alert:
+          type: "string"
+          examples:
+            - "Fehler beim Lesen des Formationsupdate: Seit mehr als 2 Stunden wurden\
+            \ keine Meldungen mehr von CIS gelesen."
+          description: "Alert message that will be transmitted via E-Mail, SMS, Pager\
+            \ ...\nDont use variables that have a short live timeframe like {$value}\n\
+            Because the \"alert\" is also used to group alerts together per \"app\"\
+            \ + \"stage\" + \"instance\"\nIf your \"exp\" is very generic.\n- You\
+            \ could for example add: {{ $labels.service }}), if it is used for all\
+            \ your micro services.\n- You could for example add: {{ $labels.host }}),\
+            \ if it is used for all your servers.\n"
+        forDuration:
+          type: "string"
+          examples:
+            - "5m"
+          description: "The for clause causes Prometheus to wait for a certain duration\
+            \ after encountering a new expression\noutput vector element and counting\
+            \ an alert as firing for this element.\nIn this case, Prometheus will\
+            \ check if the alert continues to be active during each evaluation for\
+            \ 5 minutes before actually firing the alert.\nElements that are active,\
+            \ but not firing yet, are in the pending state.\n"
+        labels:
+          type: "object"
+          anyOf:
+            - $ref: "#/components/schemas/ServiceDescriptionMonitoringLabelImon"
+            - $ref: "#/components/schemas/ServiceDescriptionMonitoringLabelAlertmanager"
+          additionalProperties:
+            type: "string"
+          examples:
+            - "severity: AlertLow"
+          description: "## What is a label\nIn prometheus your KPI looks like:\n```node_cpu_seconds_total{labelA=\"\
+            abb\",labelB=\"xyz\"} 3456778```\nThe complete kpi name including its\
+            \ label is the key for the time series.\nThis allow you to filter for\
+            \ them, like: node_cpu_seconds_total{labelA=~\"a.*\"}\nfinds all node_cpu_seconds_total\
+            \ where labelA starts with an \"a\".\n\nIn this object we use the labels\
+            \ not for the kpi but for the alert event.\nAn alert inherits its labels\
+            \ from the kpi it is raised from.\n"
+        annotations:
+          type: "object"
+          additionalProperties:
+            type: "string"
+    ServiceDescriptionMonitoringLabelImon:
+      type: "object"
+      required:
+        - "severity"
+        - "host"
+        - "service"
+      properties:
+        app:
+          type: "string"
+          description: "Will be automatically added from ServiceDescription using\
+            \ exporter config.\nCan be over written at this point, but there is no\
+            \ known use case to do that.\n"
+        stage:
+          type: "string"
+          description: "Will be automatically added from ServiceDescription using\
+            \ exporter config.\nCan be over written at this point, but there is no\
+            \ known use case to do that.\n"
+        instance:
+          type: "string"
+          description: "Will be automatically added from ServiceDescription using\
+            \ exporter config.\nCan be over written at this point, but there is no\
+            \ known use case to do that.\n"
+        host:
+          type: "string"
+          description: "The origin hostname of the kpi .\nMost of the prometheus exporter\
+            \ will provide this label.\nBut has to be added if it is not provided\
+            \ automatically.\n"
+        service:
+          type: "string"
+          description: "The name of the micro service this kpi is originating from.\n\
+            It has to be added if it is not provided automatically by the exporter.\n\
+            (needs to be one of the configured ServiceDescriptionService)\n"
+        severity:
+          type: "string"
+          description: "The severity level of the alert. Permitted: \"Notification\"\
+            , \"AlertLow\", \"AlertMedium\" and \"AlertHigh\"\n"
+        clusterStatus:
+          type: "string"
+          description: "Will be automatically added from ServiceState using alert\
+            \ preprocessor.\nCan not be overwritten at this point!\n"
+        TriageValue:
+          type: "integer"
+          description: "The id of the \"triage\" options.\n\nYou are advised to not\
+            \ set it here.\nBetter set this options in the service configuration.\n\
+            \nTriage: means in this case the responsible team.\nTo get a list of possible\
+            \ options, please refer to:\n  https://imon-test:8553/conversions/Triage\n\
+            More info:\nhttps://confluence.sbb.ch/x/OIdjSw\n"
+        TriageConv:
+          type: "string"
+          description: "The name of the \"triage\" options.\n\nYou are advised to\
+            \ not set it here.\nBetter set this options in the service configuration.\n\
+            \nTriage: means in this case the responsible team.\nTo get a list of possible\
+            \ options, please refer to:\n  https://imon-test:8553/conversions/Triage\n\
+            More info:\nhttps://confluence.sbb.ch/x/OIdjSw\n"
+      additionalProperties:
+        type: "string"
+      description: "There is an contract with iMon as to what labels have to be delivered.\n\
+        https://confluence.sbb.ch/x/wwkqT\n"
+    ServiceDescriptionMonitoringLabelAlertmanager:
+      type: "object"
+      additionalProperties:
+        type: "string"
+      description: "You can also use the alertmanager only.\nYou will need the labels\
+        \ only for routing: https://prometheus.io/docs/alerting/configuration/#route\n\
+        example:\nif alert has labelX=abc then send the alert via sms to 0791234567\n\
+        You have a lot of design freedom but it also means you have to specify your\
+        \ onw concept\n"
+    ServiceDescriptionMonitoringRecordingRule:
+      type: "object"
+      required:
+        - "expr"
+      additionalProperties: {}
+      properties:
+        record:
+          type: "string"
+          description: "Optional record label, default will be group name + key.\n"
+        expr:
+          type: "string"
+          description: "Recording rules use kpi and a calculation formula in PromQl\
+            \ syntax to calculate a new kpi.\nIf alerting rule become too complex,\
+            \ use recording rule.\nhttps://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#recording-rules\n"
+        labels:
+          type: "object"
+          anyOf:
+            - $ref: "#/components/schemas/ServiceDescriptionMonitoringLabelAlertmanager"
+          additionalProperties:
+            type: "string"
+          examples:
+            - "severity: AlertLow"
+          description: "## What is a label\nIn prometheus your KPI looks like:\n```node_cpu_seconds_total{labelA=\"\
+            abb\",labelB=\"xyz\"} 3456778```\nThe complete kpi name including its\
+            \ label is the key for the time series.\nThis allow you to filter for\
+            \ them, like: node_cpu_seconds_total{labelA=~\"a.*\"}\nfinds all node_cpu_seconds_total\
+            \ where labelA starts with an \"a\".\n\nIn this object we use the labels\
+            \ not for the kpi but for the alert event.\nAn alert inherits its labels\
+            \ from the kpi it is raised from.\n"
+      description: "Rules to monitor your KPI, and throw alerts."
+    ServiceDescriptionExporter:
+      type: "object"
+      required:
+        - "interval"
+        - "url"
+      additionalProperties: {}
+      properties:
+        interval:
+          type: "string"
+          enum:
+            - "REALTIME"
+            - "HIGH"
+            - "NORMAL"
+            - "LOW"
+          description: "| interval name \t| scrape interval \t|\n|---------------\t\
+            |-----------------\t|\n| LOW           \t|              4m \t|\n| NORMAL\
+            \        \t|              1m \t|\n| HIGH          \t|             15s\
+            \ \t|\n| REALTIME      \t|              1s \t|\n"
+        url:
+          type: "string"
+          format: "uri"
+          examples:
+            - "http://s-lt1-otc1-t01.sbb.ch:9628/solace-std"
+          description: "The URL to the exporter HTTP(S) endpoint.\nPlease always add\
+            \ the port even if it is the default (80,443)\n"
+        target:
+          type: "string"
+          pattern: "^[\\w\\-]{2,256}$"
+          default: "monitoring"
+          description: "If there is an exporter for a specific case like \"stabi\"\
+            \ you can label this here."
+        labels:
+          type: "object"
+          additionalProperties:
+            type: "string"
+          description: "Optional labels that will be added to all KPI from this exporter.\
+            \ By default the labels \"app\", \"stage\" and \"instance\" will be added\
+            \ if not overwritten at this point."
+        metric_relabel_configs:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ServiceDescriptionExporterRelableConfig"
+          description: "https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs"
+    ServiceDescriptionExporterRelableConfig:
+      type: "object"
+      required:
+        - "action"
+        - "source_labels"
+      additionalProperties: {}
+      properties:
+        action:
+          type: "string"
+          enum:
+            - "REPLACE"
+            - "KEEP"
+            - "DROP"
+            - "LABELMAP"
+            - "LABELDROP"
+            - "LABELKEEP"
+          default: "REPLACE"
+        source_labels:
+          type: "array"
+          items:
+            type: "string"
+          description: "The source labels select values from existing labels. Their\
+            \ content is concatenated\nusing the configured separator and matched\
+            \ against the configured regular expression\nfor the replace, keep, and\
+            \ drop actions.\n"
+        separator:
+          type: "string"
+          default: ";"
+          description: "Separator placed between concatenated source label values."
+        target_label:
+          type: "string"
+          description: "Label to which the resulting value is written in a replace\
+            \ action.\nIt is mandatory for replace actions. Regex capture groups are\
+            \ available.\n"
+        regex:
+          type: "string"
+          description: "Regular expression against which the extracted value is matched."
+          default: "(.*)"
+        replacement:
+          type: "string"
+          description: "Replacement value against which a regex replace is performed\
+            \ if the\nregular expression matches. Regex capture groups are available.\n"
+          default: "$1"
+    ServiceDescriptionKpi:
+      type: "object"
+      required:
+        - "name"
+        - "unit"
+        - "ttl"
+      additionalProperties: {}
+      properties:
+        name:
+          type: "string"
+          pattern: "^[\\w\\._\\-]{3,1024}$"
+          description: "The name of the kpi."
+          examples:
+            - "routen_meldungsrate"
+        unit:
+          type: "string"
+          enum:
+            - "seconds"
+            - "celsius"
+            - "meters"
+            - "bytes"
+            - "ratio"
+            - "volts"
+            - "amperes"
+            - "joules"
+            - "grams"
+          examples:
+            - "ratio"
+        ttl:
+          type: "integer"
+          minimum: 30
+          maximum: 172800
+          examples:
+            - 180
+          description: "Unit=seconds\nThe kpi.ttl is required, to reset old and no\
+            \ longer valid values, when using the kpi push via mom.\n"
+        annotations:
+          type: "object"
+          additionalProperties:
+            type: "string"
+          description: "Additional information's for the consumer."
+    ServiceDescriptionServiceGroup:
+      type: "object"
+      properties:
+        parent:
+          type: "string"
+          description: "The name of the parent group.\nSet it to \"null\" for root\
+            \ items.\nMultiple root notes are permitted.\n"
+        services:
+          type: "array"
+          items:
+            type: "string"
+          description: "List of service names, that are member of this group.\nSo\
+            \ if there is an alert with the label \"service=xyz\"\nand the service\
+            \ \"xyz\" is listed here the group icon will change to warning, critical,\
+            \ ...\n"
+        urls:
+          type: "array"
+          items:
+            type: "object"
+            required:
+              - "type"
+              - "url"
+            additionalProperties: {}
+            properties:
+              type:
+                type: "string"
+                examples:
+                  - "grafana"
+                description: "Some kind of machine readable label"
+              url:
+                type: "string"
+                format: "uri"
+                examples:
+                  - "https://grafana.local/my.dasboard"
+      examples:
+        - Anwendungs Prozesse:
+            parent: null
+          Orchestrierung:
+            parent: "Anwendungs Prozesse"
+          Supervisor:
+            parent: "Anwendungs Prozesse"
+            urls:
+              - url: "http://monitoring-rcs.sbb.ch/d/cxlueQJZk/prod-tibrv-last?orgId=1&refresh=30s"
+                type: "grafana"
+            services:
+              - "LTAAdapter"
+              - "Betriebslage"
+              - "Prognose"
+              - "IstdatenDQ"
+      description: "A flat representation of a tree, that is used to display alerts\
+        \ in iMON or other visualization tool.\nTo get an easy overview of the cluster\
+        \ health.\n"
+    ServiceDescriptionService:
+      type: "object"
+      additionalProperties: {}
+      properties:
+        kpi:
+          type: "array"
+          items:
+            type: "string"
+          description: "list of kpi that are provided by this service via mom.\nyou\
+            \ have to add and provide all kpis that are needed to evaluate the service\
+            \ quality.\nThe name of the kpis are defined in kpi section.\n"
+        consuming:
+          type: "array"
+          items:
+            type: "string"
+          description: "List of service names, where this service is consuming data\
+            \ from.\nThis may be used for any kind of root cause analysis and alarm\
+            \ grouping.\nLoops are permitted.\n"
+        labels:
+          type: "object"
+          additionalProperties:
+            type: "string"
+          description: "If an alert has this service name in its label \"service\"\
+            .\nThe alert will also inherit this labels.\nThis has no effect on the\
+            \ kpis.\n"
+      examples:
+        - Admin:
+            kpi: []
+            consuming:
+              - "CacheserverHc"
+              - "db"
+            labels:
+              TriageValue: 1
+              TriageConv: "Technical"
+          CacheserverHc:
+            kpi: []
+            consuming: []
+            labels:
+              TriageValue: 1
+              TriageConv: "Technical"
+          db:
+            kpi: []
+            consuming: []
+            labels:
+              TriageValue: 1
+              TriageConv: "Technical"
+    ServiceState:
+      allOf:
+        - $ref: "#/components/schemas/ServiceIdent"
+        - type: "object"
+          required:
+            - "app"
+            - "stage"
+            - "instance"
+            - "splunkConverterConfig"
+            - "clusterStatus"
+          additionalProperties: {}
+          properties:
+            ttl:
+              type: "string"
+              pattern: "^[S,M,H,0-9,\\.,\\+\\-]*$"
+              default: null
+              examples:
+                - "5M"
+              description: "In general you have 2 options.\n\n## Option A:\nYou want\
+              \ to acknowledge all alerts out of log msgs manually.\nThere will be\
+              \ no auto acknowledgement.\nSet ttl to \"null\"\n\n## Option B:\nGive\
+              \ a time range, for how long this alert should maximum stay active.\n\
+              If there is no new log entry with the same error within this time frame,\n\
+              the alert will be auto acknowledged.\n"
+            splunk_converter_config:
+              type: "object"
+              additionalProperties:
+                $ref: "#/components/schemas/SplunkConverterConfig"
+              description: "Configuration which fields to take from splunk webhook to\
+              \ put in the alert msgs.\nhttps://confluence.sbb.ch/x/vZXKW\n"
+            cluster_status:
+              type: "string"
+              enum:
+                - "ACTIVE"
+                - "PASSIVE"
+                - "DEPLOYMENT"
+                - "MAINTENANCE"
+                - "GOODBYE"
+                - "UNKNOWN"
+              description: "This field is used to provide the status of the instance\n\
+              If you have an active + passive cluster configuration.\n\nThe state\
+              \ \"MAINTENANCE\" will supress all alerts while it is set.\nNote: for\
+              \ backward compatibility the state \"DEPLOYMENT\" is still usable and\
+              \ has the same semantic meaning as \"MAINTENANCE\".\nHowever, please\
+              \ migrate your code to use only MAINTENANCE to reduce breaking changes\
+              \ potentially incoming on service description version 2.0.\nThe state\
+              \ \"GOODBYE\" will reset all current alerts and delete all boards and\
+              \ views.\nYou are responsible for ensuring the \"ACTIVE\" status is\
+              \ not changed too early, to avoid false positive alerts.\n"
+    SplunkConverterConfig:
+      type: "object"
+      required:
+        - "extractors"
+      additionalProperties: {}
+      properties:
+        extractors:
+          type: "object"
+          additionalProperties:
+            $ref: "#/components/schemas/SplunkExtractorConfig"
+    SplunkExtractorConfig:
+      type: "object"
+      required:
+        - "summary"
+        - "startsAt"
+        - "endsAt"
+      additionalProperties: {}
+      properties:
+        summary:
+          $ref: "#/components/schemas/ExtractorExpression"
+          examples:
+            - "default_value: '[none]'\nsource: /result/_raw\nregex:\n  pattern: ^[\\\
+            d\\-\\:\\,\\ \\.]+(.*)$\n  group: 1\n"
+          description: "The alert text is extracted from this field.\nThat will be\
+            \ used as the msgs in SMS, E-Mail, Pager, ... notifications.\n"
+        labels:
+          additionalProperties:
+            $ref: "#/components/schemas/ExtractorExpression"
+          description: "Provides a list of labels to be appended to the alert event.\n"
+          examples:
+            - "service:\n  default_value: \"\"\n  source: /result/openShiftDeploymentName\n"
+        annotations:
+          additionalProperties:
+            $ref: "#/components/schemas/ExtractorExpression"
+          description: "Provides a list of annotations to be appended to the alert\
+            \ event.\n"
+        startsAt:
+          $ref: "#/components/schemas/ExtractorExpression"
+          examples:
+            - "default_value: \"\"\nsource: /result/_time\n"
+          description: "The unix timestamp when the alert happened.\nWe expect the\
+            \ extracted value to be a decimal unix timestamp.\nExample: 1585322426.454\n\
+            If no \"source\" was give. The current time will be used.\n"
+        endsAt:
+          $ref: "#/components/schemas/ExtractorExpression"
+          examples:
+            - "default_value: \"\"\nsource: /result/_time\n"
+          description: "Only used if \"ttl\" is not zero.\n\nThis fields will be used\
+            \ as the base for calculating the alert auto acknowledge time, using the\
+            \ \"ttl\".\nWe expect the extracted value to be a decimal unix timestamp.\n\
+            Example: 1585322426.454\nIf no \"source\" was give. The current time will\
+            \ be used.\n"
+    ExtractorExpression:
+      type: "object"
+      required:
+        - "default_value"
+        - "source"
+        - "regex"
+      additionalProperties: {}
+      properties:
+        default_value:
+          type: "string"
+          description: "If:\n - the source expression is \"null\"\n - the source expression\
+            \ doesnt match the splunk webhook msg\n - the source expression hits an\
+            \ empty field\n\nThis value will be used as ExtractorExpression result.\n"
+        source:
+          type: "string"
+          examples:
+            - "/result/_raw"
+          description: "A lookup expression to search for a field in the splunk webhook\
+            \ json.\nhttps://www.baeldung.com/json-pointer\n"
+        regex:
+          $ref: "#/components/schemas/Regex"
+          type: "string"
+          description: "This regex will be applied to the fields that were selected\
+            \ by \"source\"\nThe matching group result will be used for the ExtractorExpression\
+            \ result.\n"
+    Regex:
+      type: "object"
+      required:
+        - "pattern"
+        - "group"
+      additionalProperties: {}
+      properties:
+        pattern:
+          type: "string"
+          examples:
+            - "^[\\d\\-\\:\\,\\ \\.]+(.*exception\\.SystemException \\(\\d+\\) on \\\
+            w+\\d+\\:)?(.*)$"
+        group:
+          type: "integer"
+          examples:
+            - "1"
+          description: "Index of the matching group (The round brackets) to use."
+      description: "Regex matching pattern. To extract a single string from a bigger\
+        \ search string."
+  messageTraits:
+    replyHeadersRemoteFixed:
+      headers:
+        type: "object"
+        description: "RequestReply header"
+        properties:
+          replyTo:
+            type: "string"
+            examples:
+              - "tms/monitoring/monalesy/p/v1/serviceDesc/inbox/your-host-name/10c9b782-2a83-4418-94b7-b2b51196975a"
+              - "tms/monitoring/monalesy/p/v1/serviceState/inbox/your-host-name/10c9b782-2a83-4418-94b7-b2b51196975a"
+            description: "destination the ServiceDesc needs to be replied to"
+    replyHeadersLocalOptional:
+      headers:
+        type: "object"
+        description: "RequestReply header"
+        properties:
+          replyTo:
+            type: "string"
+            examples:
+              - "tms/monitoring/monalesy/p/v1/serviceDesc/inbox/your-host-name/10c9b782-2a83-4418-94b7-b2b51196975a"
+              - "tms/monitoring/monalesy/p/v1/serviceState/inbox/your-host-name/10c9b782-2a83-4418-94b7-b2b51196975a"
+            description: "Add the replyTo header if you wand status reports to be\
+              \ sent back. You are advised to at least log those msgs."
+  parameters:
+    abb1:
+      description: "Application building block level 1 of your application."
+      examples:
+        - "tms"
+    abb2:
+      description: "Application building block level 2 of your application."
+      examples:
+        - "rcs"
+    abb3:
+      description: "Application building block level 3 of your application."
+      examples:
+        - "rcsd"
+    stage:
+      description: "The stage of your application."
+      examples:
+        - "DEV-rcsecho"
