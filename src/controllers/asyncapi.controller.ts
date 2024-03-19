@@ -78,6 +78,10 @@ export class AsyncApiController extends Controller {
      * - Your api contains examples to let your user generated sample messages.
      */
     @Query() checkQuality: boolean = false,
+    /**
+     * Return the full async api document, migth by huge.
+     */
+    @Query() returnAsyncApiDocument: boolean = false,
   ): Promise<ValidationResults> {
 
     let schemaToValidate = '';
@@ -99,7 +103,7 @@ export class AsyncApiController extends Controller {
     const resolved = resolveNonJsonRef(schemaToValidate, additionalFiles);
     const validator = createValidator(allowJsonschema2pojo, checkQuality, additionalFiles);
 
-    const [_doc, valResult] = await validator.validate(resolved.resolved);
+    const [doc, valResult] = await validator.validate(resolved.resolved);
     valResult.push(...resolved.validationResults);
 
     this.setStatus(200);
@@ -107,6 +111,7 @@ export class AsyncApiController extends Controller {
     return {
       schemaIsValid: valResult.length < 1,
       results: valResult,
+      asyncApiDoc: returnAsyncApiDocument ? doc!.json() : undefined,
     };
   }
 
@@ -132,6 +137,10 @@ export class AsyncApiController extends Controller {
      * - Your api contains examples to let your user generated sample messages.
      */
     @Query() checkQuality: boolean = false,
+    /**
+     * Return the full async api document, migth by huge.
+     */
+    @Query() returnAsyncApiDocument: boolean = false,
   ): Promise<ValidationResults> {
     const [schemaToValidate, additionalFiles] = await readZipFile(zipFile);
 
@@ -143,7 +152,7 @@ export class AsyncApiController extends Controller {
     const resolved = resolveNonJsonRef(schemaToValidate, additionalFiles);
     const validator = createValidator(allowJsonschema2pojo, checkQuality, additionalFiles);
 
-    const [_doc, valResult] = await validator.validate(resolved.resolved);
+    const [doc, valResult] = await validator.validate(resolved.resolved);
     valResult.push(...resolved.validationResults);
 
     this.setStatus(200);
@@ -151,6 +160,7 @@ export class AsyncApiController extends Controller {
     return {
       schemaIsValid: valResult.length < 1,
       results: valResult,
+      asyncApiDoc: returnAsyncApiDocument ? doc!.json() : undefined,
     };
   }
 

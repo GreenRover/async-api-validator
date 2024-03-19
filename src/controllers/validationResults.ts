@@ -1,3 +1,5 @@
+import { AsyncAPIDocumentInterface } from '@asyncapi/parser';
+
 export interface ValidationResult {
     /**
      * Supposed to unique
@@ -13,4 +15,5 @@ export interface ValidationResults {
      */
     schemaIsValid: boolean;
     results: ValidationResult[];
+    asyncApiDoc?: any | undefined,
 }
