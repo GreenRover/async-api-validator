@@ -303,8 +303,12 @@ export class SchemaValidator {
     }
   }
 
-  public static stripAsyncApiXKeywords(json: any): any {
+  public static stripAsyncApiXKeywords(json: any, callPath: any[] = []): any {
     if (json === undefined || json === null) {
+      return;
+    }
+    if (callPath.indexOf(json) !== -1) {
+      // prevent endless recursion.
       return;
     }
     for (const [key, value] of Object.entries(json)) {
@@ -313,19 +317,23 @@ export class SchemaValidator {
       } else if (Array.isArray(value)) {
         for (const val of value) {
           if (typeof val === 'object') {
-            this.stripAsyncApiXKeywords(val);
+            this.stripAsyncApiXKeywords(val, [...callPath, val]);
           }
         }
       } else if (typeof value === 'object') {
-        this.stripAsyncApiXKeywords(value);
+        this.stripAsyncApiXKeywords(value, [...callPath, value]);
       }
     }
 
     return json;
   }
 
-  public static stripJsonschema2pojoKeywords(json: any): any {
+  public static stripJsonschema2pojoKeywords(json: any, callPath: any[] = []): any {
     if (json === undefined || json === null) {
+      return;
+    }
+    if (callPath.indexOf(json) !== -1) {
+      // prevent endless recursion.
       return;
     }
     for (const [key, value] of Object.entries(json)) {
@@ -343,39 +351,14 @@ export class SchemaValidator {
       } else if (Array.isArray(value)) {
         for (const val of value) {
           if (typeof val === 'object') {
-            this.stripJsonschema2pojoKeywords(val);
+            this.stripJsonschema2pojoKeywords(val, [...callPath, val]);
           }
         }
       } else if (typeof value === 'object') {
-        this.stripJsonschema2pojoKeywords(value);
+        this.stripJsonschema2pojoKeywords(value, [...callPath, value]);
       }
     }
   }
-
-  public static revertSchemaParserEffects(json: any): any {
-    if (json === undefined || json === null) {
-      return;
-    }
-
-    if (json['x-parser-original-payload']) {
-      return json['x-parser-original-payload'];
-    }
-
-    for (const [key, value] of Object.entries(json)) {
-      if (Array.isArray(value)) {
-        for (let i = 0; i < value.length; i++) {
-          if (typeof key[i] === 'object') {
-            json[key][i] = this.stripJsonschema2pojoKeywords(key[i]);
-          }
-        }
-      } else if (typeof value === 'object') {
-        json[key] = this.stripJsonschema2pojoKeywords(value);
-      }
-    }
-
-    return json;
-  }
-
 }
 
 function toNumericVersion(semanticVersion: string): number {
