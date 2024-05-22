@@ -41,7 +41,7 @@
           "taskRef": "esta-custom-exec",
           "params": {
             "SCRIPT": "set +e; ./validate.sh --kubelint --kubeconform",
-            "RUN_IMAGE": "esta.docker.bin.sbb.ch/esta/esta-tekton-pipeline-helm-builderimage:1.7.0"
+            "RUN_IMAGE": "esta.docker.bin.sbb.ch/esta/esta-tekton-pipeline-helm-builderimage:1.9.5"
           },
           "runAfter": "git-clone"
         }
@@ -93,7 +93,7 @@
           "taskRef": "esta-custom-exec",
           "params": {
             "SCRIPT": "set +e; ./validate.sh --kubelint --kubeconform",
-            "RUN_IMAGE": "esta.docker.bin.sbb.ch/esta/esta-tekton-pipeline-helm-builderimage:1.7.0"
+            "RUN_IMAGE": "esta.docker.bin.sbb.ch/esta/esta-tekton-pipeline-helm-builderimage:1.9.5"
           },
           "runAfter": "git-clone"
         }
