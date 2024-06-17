@@ -1,4 +1,4 @@
-FROM dockerio.docker.bin.sbb.ch/library/node:16.13
+FROM dockerio.docker.bin.sbb.ch/library/node:22.3
 
 ARG VERSION
 
