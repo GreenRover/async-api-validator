@@ -1,5 +1,3 @@
-import { AsyncAPIDocumentInterface } from '@asyncapi/parser';
-
 export interface ValidationResult {
     /**
      * Supposed to unique
