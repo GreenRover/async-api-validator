@@ -2,5 +2,14 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>TP_TMS_PLATTFORM/sttrs-renovate-preset"
+  ],
+  "packageRules": [
+    {
+      "description": "eslint 9 ist not jet compatible with typescript",
+      "matchPackageNames": [
+        "eslint"
+      ],
+      "allowedVersions": "<9.0.0"
+    }
   ]
 }
