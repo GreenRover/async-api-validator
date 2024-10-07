@@ -10,7 +10,7 @@ export class RefResolver {
   public static resolve(source: any, resolveFile: (path: string) => string): ResolvingResult {
     try {
       source = yaml.load(source);
-    } catch (e) {
+    } catch (_) {
       source = JSON.parse(source);
     }
 
