@@ -1,6 +1,7 @@
 import * as bodyParser from 'body-parser';
-import express, { Express, Request, Response } from 'express';
+import express, { Express } from 'express';
 import * as swaggerUi from 'swagger-ui-express';
+import swaggerDocument from './generated/swagger.json';
 import { RegisterRoutes } from './routes/routes';
 
 export const application = () => {
@@ -12,16 +13,13 @@ export const application = () => {
   app.use(
     '/doc',
     swaggerUi.serve,
-    async (_req: Request, res: Response) => {
-      return res.send(
-        swaggerUi.generateHTML(
-          await import('./generated/swagger.json'),
-          {
-            customCss: '.curl-command { display: none; }',
-          },
-        ),
-      );
-    });
+    swaggerUi.setup(
+      swaggerDocument,
+      {
+        customCss: '.curl-command { display: none; }',
+      },
+    ),
+  );
 
   app.get('/', (_, res) => {
     res.redirect('/doc');
