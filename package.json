@@ -3,7 +3,7 @@
     "@asyncapi/avro-schema-parser": "3.0.24",
     "@asyncapi/openapi-schema-parser": "3.0.24",
     "@asyncapi/parser": "^3.4.0",
-    "@asyncapi/protobuf-schema-parser": "3.2.14",
+    "@asyncapi/protobuf-schema-parser": "3.3.0",
     "ajv": "^8.13.0",
     "ajv-formats": "^3.0.0",
     "body-parser": "^1.20.2",
@@ -54,6 +54,9 @@
     "lint": "eslint . --ext .ts",
     "clean": "rimraf dist",
     "test": "jest --coverage --maxWorkers=4 --testTimeout=5000 --detectOpenHandles"
+  },
+  "engines" : {
+    "node" : ">=21.0.0"
   },
   "jest-junit": {
     "suiteName": "jest tests",

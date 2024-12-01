@@ -9,6 +9,9 @@ const config: Config.InitialOptions = {
   reporters: [
     'default',
     'jest-junit'
+  ],
+  modulePathIgnorePatterns: [
+    "<rootDir>/dist/"
   ]
 };
 export default config;

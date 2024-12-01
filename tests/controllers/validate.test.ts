@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import path from 'node:path';
 import { request } from '../helpers';
 
 describe('Test controller validateSchemaSimple()', () => {
@@ -15,8 +16,8 @@ describe('Test controller validateSchemaSimple()', () => {
       'monalesy_service_desc_3.0.yaml',
     ];
     for (const validApi of validApis) {
-      it('Valid API "' + validApi + '" should not fiel', async () => {
-        const api = readFileSync(__dirname + '/apis/' + validApi);
+      it('Valid API "' + validApi + '" should not fail', async () => {
+        const api = readFileSync(path.join(__dirname, 'apis', validApi));
 
         const { body: data } = await request
           .post('/api/v1/asyncapi/validate?checkQuality=true')
@@ -25,9 +26,9 @@ describe('Test controller validateSchemaSimple()', () => {
           .expect(200);
 
         expect(data).toStrictEqual({
-          results: [],
-          schemaIsValid: true,
-        });
+                                     results: [],
+                                     schemaIsValid: true,
+                                   });
       });
     }
   });
