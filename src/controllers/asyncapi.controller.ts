@@ -204,7 +204,7 @@ export class AsyncApiController extends Controller {
 
 
     this.setStatus(500);
-    return 'invalid document, please use validate funtion';
+    return 'invalid document, please use validate function';
   }
 
 }
