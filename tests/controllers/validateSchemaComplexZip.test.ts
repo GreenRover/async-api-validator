@@ -21,5 +21,23 @@ describe('Test controller validateSchemaComplexZip()', () => {
         schemaIsValid: true,
       });
     });
+
+    it('packages_and_protoc-gen', async () => {
+      const zipFile = readFileSync(path.join(__dirname, 'apis', 'complex_using_packages_and_protoc-gen-validate.zip'));
+
+      const res = await request
+        .post('/api/v1/asyncapi/joinAndValidateZip')
+        .field('checkQuality', 'true')
+        .field('returnAsyncApiDocument', 'true')
+        .attach('zipFile', zipFile, {
+          filename: 'complex_using_packages_and_protoc-gen-validate.zip',
+        })
+        .expect(200);
+
+      expect(res.body).toStrictEqual({
+                                       results: [],
+                                       schemaIsValid: true,
+                                     });
+    });
   });
 });
