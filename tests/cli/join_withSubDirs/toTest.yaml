@@ -1,0 +1,10 @@
+asyncapi: 3.0.0
+info:
+  title: "Testing"
+  version: "0.1.0"
+components:
+  schemas:
+    someEvent:
+      schemaFormat: 'application/vnd.google.protobuf;version=3'
+      schema:
+        $ref: events.proto

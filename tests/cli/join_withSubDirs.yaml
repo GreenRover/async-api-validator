@@ -1,0 +1,22 @@
+asyncapi: 3.0.0
+info:
+  title: Testing
+  version: 0.1.0
+components:
+  schemas:
+    someEvent:
+      schemaFormat: application/vnd.google.protobuf;version=3
+      schema: |
+        syntax = "proto3";
+        package events;
+
+        message foobar__FooBarID {
+          string foo_id = 1 [ (validate.rules).string.min_len = 3 ];
+          string bar_id = 2 [ (validate.rules).string.min_len = 3 ];
+        }
+
+        // @RootNode
+        message SomeEvent {
+          foobar__FooBarID id = 1;
+          string event_name = 2;
+        }

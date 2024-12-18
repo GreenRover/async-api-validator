@@ -75,9 +75,9 @@ export class ProtoReferenceJoiner {
           matcher[1] :
           (basePath + '/' + matcher[1]).replace('\\', '/');
 
-        if (this.isGoogleProto(fileToInclude)) {
+        if (this.isGoogleProto(matcher[1])) {
           meta.addGlobalLibInclude(line);
-        } else if (this.isProtocValid(fileToInclude)) {
+        } else if (this.isProtocValid(matcher[1])) {
           // Nothing to include
         } else if (!meta.hasBeenIncluded(fileToInclude)) { // avoid double includes
           let fileToIncludeContent;

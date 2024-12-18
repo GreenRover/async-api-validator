@@ -10,7 +10,8 @@
     "express": "^4.19.2",
     "js-yaml": "^4.1.0",
     "multer": "1.4.5-lts.1",
-    "swagger-ui-express": "^5.0.0"
+    "swagger-ui-express": "^5.0.0",
+    "yargs": "^17.7.2"
   },
   "name": "api-validator",
   "version": "1.5.2",
@@ -22,6 +23,7 @@
     "@types/node": "^22.10.1",
     "@types/supertest": "^6.0.2",
     "@types/swagger-ui-express": "^4.1.7",
+    "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "8.5.0",
     "@typescript-eslint/parser": "8.5.0",
     "concurrently": "^9.0.0",
@@ -53,7 +55,11 @@
     "docker:build": "docker build -t angellandros/express-ts .",
     "lint": "eslint . --ext .ts",
     "clean": "rimraf dist",
-    "test": "jest --coverage --maxWorkers=4 --testTimeout=5000 --detectOpenHandles"
+    "test": "npm run tsc && jest --coverage --maxWorkers=4 --testTimeout=5000 --detectOpenHandles",
+    "asyncapi-join": "npm run tsc && node dist/src/cli/join.js"
+  },
+  "bin": {
+    "asyncapi-join": "./dist/src/cli/join.js"
   },
   "engines" : {
     "node" : ">=21.0.0"

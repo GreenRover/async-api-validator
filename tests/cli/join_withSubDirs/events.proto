@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package events;
+
+import "subDir/subSubDir/foobar.proto";
+
+// @RootNode
+message SomeEvent {
+  foobar.FooBarID id = 1;
+  string event_name = 2;
+}
